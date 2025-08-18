@@ -29,7 +29,7 @@ from agentdojo.agent_pipeline.tool_execution import (
     ToolsExecutor,
     tool_result_to_str,
 )
-from agentdojo.functions_runtime import EmptyEnv, Env, FunctionsRuntime
+from agentdojo.functions_runtime import EmptyEnv, FunctionCall, Env, FunctionsRuntime
 from agentdojo.logging import Logger
 from agentdojo.models import MODEL_PROVIDERS, ModelsEnum
 from agentdojo.types import ChatMessage
@@ -69,7 +69,7 @@ def _get_local_model_id(port) -> str:
 
 def get_llm(provider: str, model: str, model_id: str | None, tool_delimiter: str) -> BasePipelineElement:
     if provider == "openai":
-        client = openai.OpenAI()
+        client = openai.OpenAI(api_key="test", base_url="http://localhost:8000/v1/")
         llm = OpenAILLM(client, model)
     elif provider == "anthropic":
         client = anthropic.Anthropic()
