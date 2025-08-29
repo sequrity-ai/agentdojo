@@ -180,14 +180,21 @@ def chat_completion_request(
     )
     response = api_response.json()
     # temporary
-    session_usage = response['usage']['session']['token_usage']
-    # except:
-    #     breakpoint()
-    response["usage"] = {
-        'prompt_tokens': session_usage['prompt_tokens'],
-        'completion_tokens': session_usage['completion_tokens'], 
-        'total_tokens': session_usage['total_tokens']
-    }
+    if (response is not None) and ('usage' in response) and (response['usage'] is not None) and ('session' in response['usage']):
+        session_usage = response['usage']['session']['token_usage']
+        # except:
+        #     breakpoint()
+        response["usage"] = {
+            'prompt_tokens': session_usage['prompt_tokens'],
+            'completion_tokens': session_usage['completion_tokens'], 
+            'total_tokens': session_usage['total_tokens']
+        }
+    else:
+        response['usage'] = {
+            'prompt_tokens': -1,
+            'completion_tokens': -1,
+            'total_tokens': -1
+        }
     return ChatCompletion(**response)
     # return reponse
     # return client.chat.completions.create(

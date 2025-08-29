@@ -7,6 +7,7 @@ from collections.abc import Callable, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import Generic, TypeVar
+import requests
 
 import yaml
 from pydantic import BaseModel
@@ -388,6 +389,9 @@ class TaskSuite(Generic[Env]):
                 # get last environment and messages
                 task_environment = e.task_environment
                 messages = e.messages
+            except requests.exceptions.JSONDecodeError as e: 
+                print(e)
+                continue
 
             model_output = model_output_from_messages(messages)
             if model_output is not None:
