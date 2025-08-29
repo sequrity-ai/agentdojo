@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from typing import Annotated
 
 from pydantic import BaseModel, EmailStr, model_validator
@@ -38,7 +38,7 @@ class CloudDrive(BaseModel):
             content=content,
             size=len(content),
             owner=self.account_email,
-            last_modified=datetime.datetime.now(),
+            last_modified=datetime.now().isoformat(),
         )
         self.files[new_file.id_] = new_file
         return new_file
@@ -59,7 +59,7 @@ class CloudDrive(BaseModel):
         file = self.get_file_by_id(file_id)
         file.content += content
         file.size = len(file.content)
-        file.last_modified = datetime.datetime.now()
+        file.last_modified = datetime.now().isoformat()
         return file
 
     def get_file_sizes(self) -> dict[str, int]:

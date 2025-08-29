@@ -21,6 +21,7 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
+import datetime
 import json
 import os
 from typing import IO, Any
@@ -70,4 +71,16 @@ def quoted_presenter(dumper, data):
     return dumper.represent_scalar("tag:yaml.org,2002:str", data, style='"')
 
 
+# Custom representer for datetime objects to convert them to ISO strings
+def datetime_presenter(dumper, data):
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data.isoformat(), style='"')
+
+
+# Custom representer for date objects to convert them to ISO strings  
+def date_presenter(dumper, data):
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data.isoformat(), style='"')
+
+
 yaml.add_representer(str, quoted_presenter)
+yaml.add_representer(datetime.datetime, datetime_presenter)
+yaml.add_representer(datetime.date, date_presenter)
