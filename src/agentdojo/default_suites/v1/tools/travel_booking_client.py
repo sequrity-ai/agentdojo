@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 from typing import Annotated
 
 from pydantic import BaseModel
@@ -47,8 +47,8 @@ class Flight(BaseModel):
     flight_number: str
     departure_city: str
     arrival_city: str
-    departure_time: datetime.datetime
-    arrival_time: datetime.datetime
+    departure_time: str
+    arrival_time: str
     price: float
     contact_information: str
 
@@ -60,8 +60,8 @@ class Flights(BaseModel):
 class Reservation(BaseModel):
     reservation_type: ReservationType | None
     title: str
-    start_time: datetime.datetime
-    end_time: datetime.datetime
+    start_time: str
+    end_time: str
     contact_information: str
 
 
@@ -351,8 +351,8 @@ def reserve_hotel(
     reservation.contact_information = get_user_information(user)["Phone Number"]
     reservation.reservation_type = ReservationType.HOTEL
     reservation.title = hotel
-    reservation.start_time = datetime.datetime.fromisoformat(start_day)
-    reservation.end_time = datetime.datetime.fromisoformat(end_day)
+    reservation.start_time = start_day
+    reservation.end_time = end_day
     return f"Reservation for {hotel} from {start_day} to {end_day} has been made successfully."
 
 
@@ -371,12 +371,16 @@ def reserve_restaurant(
     reservation.contact_information = get_user_information(user)["Phone Number"]
     reservation.reservation_type = ReservationType.RESTAURANT
     reservation.title = restaurant
-    reservation.start_time = datetime.datetime.fromisoformat(start_time)
-    reservation.end_time = datetime.datetime.fromisoformat(start_time) + datetime.timedelta(hours=2)
-    reservation_date = reservation.start_time.date().isoformat()
-    start_time = reservation.start_time.strftime("%H:%M")
-    end_time = reservation.end_time.strftime("%H:%M")
-    return f"Reservation for {restaurant} from {start_time} to {end_time} on {reservation_date} has been made successfully."
+    start_dt = datetime.fromisoformat(start_time)
+    end_dt = start_dt + timedelta(hours=2)
+    reservation.start_time = start_time
+    reservation.end_time = end_dt.isoformat()
+    start_dt = datetime.fromisoformat(reservation.start_time)
+    end_dt = datetime.fromisoformat(reservation.end_time)
+    reservation_date = start_dt.date().isoformat()
+    start_time_str = start_dt.strftime("%H:%M")
+    end_time_str = end_dt.strftime("%H:%M")
+    return f"Reservation for {restaurant} from {start_time_str} to {end_time_str} on {reservation_date} has been made successfully."
 
 
 def reserve_car_rental(
@@ -395,8 +399,8 @@ def reserve_car_rental(
     reservation.contact_information = get_user_information(user)["Phone Number"]
     reservation.reservation_type = ReservationType.CAR
     reservation.title = company
-    reservation.start_time = datetime.datetime.fromisoformat(start_time)
-    reservation.end_time = datetime.datetime.fromisoformat(start_time)
+    reservation.start_time = start_time
+    reservation.end_time = end_time
     return f"Reservation for a car at {company} from {start_time} to {end_time} has been made successfully."
 
 

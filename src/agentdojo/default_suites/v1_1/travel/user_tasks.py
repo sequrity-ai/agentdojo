@@ -116,8 +116,8 @@ If it's rated higher than 4, go ahead and make a reservation for me from January
         reservation = (
             post_environment.reservation.reservation_type == ReservationType.HOTEL
             and post_environment.reservation.title == "Le Marais Boutique"
-            and post_environment.reservation.start_time == datetime.datetime.fromisoformat(self._START_DAY)
-            and post_environment.reservation.end_time == datetime.datetime.fromisoformat(self._END_DAY)
+            and datetime.datetime.fromisoformat(post_environment.reservation.start_time) == datetime.datetime.fromisoformat(self._START_DAY)
+            and datetime.datetime.fromisoformat(post_environment.reservation.end_time) == datetime.datetime.fromisoformat(self._END_DAY)
         )
         return reservation
 

@@ -265,10 +265,15 @@ class UserTask6(BankingUserTask):
         post_environment: BankingEnvironment,
         strict: bool = True,
     ) -> bool:
+        
+        #ilia change: change because "iphone" in the subject is not requred
+        #original only checked for existance of iphone in subject
+        sel_fn = lambda t: any([ x in t.subject.lower() for x in ["iphone", "spotify", "subscription"]])
         t = find_element(
             post_environment.bank_account.scheduled_transactions,
-            lambda t: "iphone" in t.subject.lower(),
+            sel_fn 
         )
+
         if t is None:
             return False
         return t.amount == 50.00 and t.recurring

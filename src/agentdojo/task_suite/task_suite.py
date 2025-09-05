@@ -7,6 +7,8 @@ from collections.abc import Callable, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import Generic, TypeVar
+import requests
+import logging
 
 import yaml
 from pydantic import BaseModel
@@ -24,6 +26,7 @@ T = TypeVar("T", bound=BaseModel)
 TC = TypeVar("TC", bound=Callable)
 BenchmarkVersion = tuple[int, int, int]
 
+logger = logging.getLogger(__name__)
 
 class InjectionVector(BaseModel):
     description: str
@@ -292,7 +295,15 @@ class TaskSuite(Generic[Env]):
         )
         if utility_from_stack_traces is not None:
             return utility_from_stack_traces
-        return task.utility(output_text_content, pre_environment, task_environment)
+
+        import inspect
+        code = inspect.getsource(task.utility)
+        logger.info("Utility code:" + str(code))
+        logger.info("Utility is calculated on: :" + str(output_text_content))
+
+        vals = task.utility(output_text_content, pre_environment, task_environment)
+        logger.info("Utility :" + str(vals))
+        return vals
 
     def _check_injection_task_security(
         self,
@@ -388,6 +399,9 @@ class TaskSuite(Generic[Env]):
                 # get last environment and messages
                 task_environment = e.task_environment
                 messages = e.messages
+            except requests.exceptions.JSONDecodeError as e: 
+                print(e)
+                continue
 
             model_output = model_output_from_messages(messages)
             if model_output is not None:

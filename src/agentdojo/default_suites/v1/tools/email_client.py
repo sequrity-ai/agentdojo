@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from typing import Annotated
 
 from pydantic import BaseModel, EmailStr, computed_field, model_validator
@@ -92,7 +92,7 @@ class Inbox(BaseModel):
             subject=subject,
             recipients=recipients,
             status=EmailStatus.sent,
-            timestamp=datetime.datetime.now(),
+            timestamp=datetime.now().isoformat(),
             cc=cc,
             bcc=bcc,
             attachments=attachments,

@@ -1,4 +1,6 @@
 import json
+import requests
+import yaml
 from collections.abc import Sequence
 from typing import overload
 
@@ -19,6 +21,7 @@ from openai.types.chat import (
 )
 from openai.types.shared_params import FunctionDefinition
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random_exponential
+from openai.types.chat import ChatCompletion
 
 from agentdojo.agent_pipeline.base_pipeline_element import BasePipelineElement
 from agentdojo.functions_runtime import EmptyEnv, Env, Function, FunctionCall, FunctionsRuntime
@@ -99,12 +102,14 @@ def _message_to_openai(message: ChatMessage, model_name: str) -> ChatCompletionM
         case "tool":
             if message["tool_call_id"] is None:
                 raise ValueError("`tool_call_id` should be specified for OpenAI.")
-            return ChatCompletionToolMessageParam(
-                content=message["error"] or _content_blocks_to_openai_content_blocks(message),
+            res = ChatCompletionToolMessageParam(
+                # content=message["error"] or _content_blocks_to_openai_content_blocks(message),
+                content=message["error"] or message['content'][0]['content'],
                 tool_call_id=message["tool_call_id"],
                 role="tool",
                 name=message["tool_call"].function,  # type: ignore -- this is actually used, and is important!
             )
+            return res
         case _:
             raise ValueError(f"Invalid message type: {message}")
 
@@ -153,15 +158,53 @@ def chat_completion_request(
     tools: Sequence[ChatCompletionToolParam],
     reasoning_effort: ChatCompletionReasoningEffort | None,
     temperature: float | None = 0.0,
+    session_id: str = None,
 ):
-    return client.chat.completions.create(
-        model=model,
-        messages=messages,
-        tools=tools or NOT_GIVEN,
-        tool_choice="auto" if tools else NOT_GIVEN,
-        temperature=temperature or NOT_GIVEN,
-        reasoning_effort=reasoning_effort or NOT_GIVEN,
+    base_url = "http://localhost:8000"
+    headers = {"Content-Type": "application/json"}
+    if not session_id is None:
+        headers["X-Session-ID"] = session_id
+    values = {
+        "model": model,
+        "messages": messages,
+        "tools": tools,
+        "reasoning_effort": reasoning_effort,
+        "temperature": temperature,
+    }
+
+    api_response = requests.post(
+            f"{base_url}/v1/chat/completions", 
+            json=values,
+            headers=headers,
+            timeout=3000,
     )
+    response = api_response.json()
+    # temporary
+    if (response is not None) and ('usage' in response) and (response['usage'] is not None) and ('session' in response['usage']):
+        session_usage = response['usage']['session']['token_usage']
+        # except:
+        #     breakpoint()
+        response["usage"] = {
+            'prompt_tokens': session_usage['prompt_tokens'],
+            'completion_tokens': session_usage['completion_tokens'], 
+            'total_tokens': session_usage['total_tokens']
+        }
+    else:
+        response['usage'] = {
+            'prompt_tokens': -1,
+            'completion_tokens': -1,
+            'total_tokens': -1
+        }
+    return ChatCompletion(**response)
+    # return reponse
+    # return client.chat.completions.create(
+    #     model=model,
+    #     messages=messages,
+    #     tools=tools or NOT_GIVEN,
+    #     tool_choice="auto" if tools else NOT_GIVEN,
+    #     temperature=temperature or NOT_GIVEN,
+    #     reasoning_effort=reasoning_effort or NOT_GIVEN,
+    # )
 
 
 class OpenAILLM(BasePipelineElement):
@@ -184,6 +227,7 @@ class OpenAILLM(BasePipelineElement):
         self.model = model
         self.temperature = temperature
         self.reasoning_effort: ChatCompletionReasoningEffort | None = reasoning_effort
+        self.session_id = None
 
     def query(
         self,
@@ -196,8 +240,10 @@ class OpenAILLM(BasePipelineElement):
         openai_messages = [_message_to_openai(message, self.model) for message in messages]
         openai_tools = [_function_to_openai(tool) for tool in runtime.functions.values()]
         completion = chat_completion_request(
-            self.client, self.model, openai_messages, openai_tools, self.reasoning_effort, self.temperature
+            self.client, self.model, openai_messages, 
+            openai_tools, self.reasoning_effort, self.temperature, self.session_id
         )
+        self.session_id = getattr(completion, "id") if hasattr(completion, "id") else None
         output = _openai_to_assistant_message(completion.choices[0].message)
         messages = [*messages, output]
         return query, runtime, env, messages, extra_args

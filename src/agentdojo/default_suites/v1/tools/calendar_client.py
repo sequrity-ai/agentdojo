@@ -1,4 +1,4 @@
-import datetime
+from datetime import date, datetime
 from typing import Annotated
 
 from pydantic import BaseModel, EmailStr, model_validator
@@ -10,7 +10,7 @@ from agentdojo.functions_runtime import Depends
 
 
 class Calendar(BaseModel):
-    current_day: datetime.date
+    current_day: str
     account_email: EmailStr
     initial_events: list[CalendarEvent]
     events: dict[CalendarEventID, CalendarEvent] = {}
@@ -28,15 +28,20 @@ class Calendar(BaseModel):
         largest_id = max((int(key) for key in self.events.keys()), default=0)
         return CalendarEventID(largest_id + 1)
 
-    def get_by_day(self, day: datetime.date) -> list[CalendarEvent]:
-        return [event for event in self.events.values() if event.start_time.date() == day]
+    def get_by_day(self, day: str) -> list[CalendarEvent]:
+        if type(day) == str:
+            target_date = datetime.fromisoformat(day).date()
+        else: 
+            target_date = day
+
+        return [event for event in self.events.values() if datetime.fromisoformat(event.start_time).date() == target_date]
 
     def create_event(
         self,
         title: str,
         description: str,
-        start_time: datetime.datetime,
-        end_time: datetime.datetime,
+        start_time: str,
+        end_time: str,
         location: str | None,
         participants: list[EmailStr],
     ) -> CalendarEvent:
@@ -66,7 +71,7 @@ class Calendar(BaseModel):
             attachments=[self.events[event_id]],
         )
 
-    def search_events(self, query: str, date: datetime.date | None = None) -> list[CalendarEvent]:
+    def search_events(self, query: str, date: str | None = None) -> list[CalendarEvent]:
         if date is not None:
             events = self.get_by_day(date)
         else:
@@ -77,13 +82,18 @@ class Calendar(BaseModel):
             if query.lower() in event.title.lower() or query.lower() in event.description.lower()
         ]
 
-    def day_has_conflicts(self, day: datetime.date) -> bool:
+    def day_has_conflicts(self, day: str) -> bool:
         events = self.get_by_day(day)
         for i, event in enumerate(events):
             for other_event in events[i + 1 :]:
+                event_start = datetime.fromisoformat(event.start_time)
+                event_end = datetime.fromisoformat(event.end_time)
+                other_start = datetime.fromisoformat(other_event.start_time)
+                other_end = datetime.fromisoformat(other_event.end_time)
+                
                 if (
-                    event.start_time <= other_event.start_time < event.end_time
-                    or event.start_time < other_event.end_time <= event.end_time
+                    event_start <= other_start < event_end
+                    or event_start < other_end <= event_end
                 ):
                     return True
         return False
@@ -92,23 +102,30 @@ class Calendar(BaseModel):
         self,
         inbox: Inbox,
         event_id: CalendarEventID,
-        new_start_time: datetime.datetime,
-        new_end_time: datetime.datetime | None = None,
+        new_start_time: str,
+        new_end_time: str | None = None,
     ) -> CalendarEvent:
         if event_id not in self.events:
             raise ValueError(f"Event with ID '{event_id}' not found.")
         event = self.events[event_id]
-        old_start_time = event.start_time
+        old_start_dt = datetime.fromisoformat(event.start_time)
+        old_end_dt = datetime.fromisoformat(event.end_time)
+        new_start_dt = datetime.fromisoformat(new_start_time)
+        
         event.start_time = new_start_time
         if new_end_time is not None:
             event.end_time = new_end_time
         else:
-            event.end_time = new_start_time + (event.end_time - old_start_time)
-        start_date = event.start_time.date().isoformat()
-        start_time = event.start_time.time().isoformat()
-        end_date = event.end_time.date().isoformat()
-        end_time = event.end_time.time().isoformat()
-        body = f"The event has been rescheduled. It will start on  {start_date} at {start_time} and end on {end_date} at {end_time}."
+            duration = old_end_dt - old_start_dt
+            new_end_dt = new_start_dt + duration
+            event.end_time = new_end_dt.isoformat()
+        
+        start_date = new_start_dt.date().isoformat()
+        start_time_str = new_start_dt.time().isoformat()
+        end_dt = datetime.fromisoformat(event.end_time)
+        end_date = end_dt.date().isoformat()
+        end_time_str = end_dt.time().isoformat()
+        body = f"The event has been rescheduled. It will start on  {start_date} at {start_time_str} and end on {end_date} at {end_time_str}."
         inbox.send_email(
             event.participants,
             subject="Rescheduled: '{event.title}'",
@@ -130,8 +147,7 @@ def get_day_calendar_events(calendar: Annotated[Calendar, Depends("calendar")], 
 
     :param day: The day for which to return the appointments. Must be in format YYYY-MM-DD.
     """
-    date = datetime.datetime.strptime(day, "%Y-%m-%d")
-    return calendar.get_by_day(date.date())
+    return calendar.get_by_day(day)
 
 
 def create_calendar_event(
@@ -154,11 +170,11 @@ def create_calendar_event(
     :param participants: The list of participants' email addresses. If `null`, no participants are set. The calendar owner's email address is always included..
     :param location: The location of the event. If `null`, no location is set.
     """
-    parsed_start_time = datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M")
-    parsed_end_time = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M")
+    parsed_start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M")
+    parsed_end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M")
     if participants is None:
         participants = []
-    new_event = calendar.create_event(title, description, parsed_start_time, parsed_end_time, location, participants)
+    new_event = calendar.create_event(title, description, parsed_start_time.isoformat(), parsed_end_time.isoformat(), location, participants)
     inbox.send_email(
         recipients=participants,
         subject=f"Invitation: {title}",
@@ -178,11 +194,7 @@ def search_calendar_events(
     :param query: The query string to search for in event titles and descriptions.
     :param date: The date for which to search events. Must be in format YYYY-MM-DD. If `null`, searches all events.
     """
-    if date is not None:
-        date_ = datetime.datetime.strptime(date, "%Y-%m-%d").date()
-    else:
-        date_ = None
-    matches = calendar.search_events(query, date_)
+    matches = calendar.search_events(query, date)
     if len(matches) == 0:
         raise ValueError("No events found. Try with a different query.")
     return matches
@@ -194,7 +206,7 @@ def get_current_day(
     """Returns the current day in ISO format, e.g. '2022-01-01'.
     It is useful to know what the current day, year, or month is, as the assistant
     should not assume what the current date is."""
-    return calendar.current_day.isoformat()
+    return calendar.current_day
 
 
 def cancel_calendar_event(
@@ -227,13 +239,13 @@ def reschedule_calendar_event(
     If `null`, the end time will be computed based on the new start time to keep the event duration the same.
     """
     if new_end_time is not None:
-        parsed_new_end_time = datetime.datetime.strptime(new_end_time, "%Y-%m-%d %H:%M")
+        parsed_new_end_time = datetime.strptime(new_end_time, "%Y-%m-%d %H:%M").isoformat()
     else:
         parsed_new_end_time = None
     calendar_event = calendar.reschedule_event(
         inbox,
         CalendarEventID(event_id),
-        datetime.datetime.strptime(new_start_time, "%Y-%m-%d %H:%M"),
+        datetime.strptime(new_start_time, "%Y-%m-%d %H:%M").isoformat(),
         parsed_new_end_time,
     )
     return calendar_event
