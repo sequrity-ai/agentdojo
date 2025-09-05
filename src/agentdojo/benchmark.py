@@ -147,6 +147,7 @@ def run_task_with_injection_tasks(
 
             logger.set_contextarg("utility", utility)
             logger.set_contextarg("security", security)
+            print(f"Utility: {utility} Security: {security}")
 
         utility_results[(user_task.ID, injection_task_id)] = utility
         security_results[(user_task.ID, injection_task_id)] = security
