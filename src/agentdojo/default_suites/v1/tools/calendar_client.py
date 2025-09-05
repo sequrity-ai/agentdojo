@@ -29,7 +29,11 @@ class Calendar(BaseModel):
         return CalendarEventID(largest_id + 1)
 
     def get_by_day(self, day: str) -> list[CalendarEvent]:
-        target_date = datetime.fromisoformat(day).date()
+        if type(day) == str:
+            target_date = datetime.fromisoformat(day).date()
+        else: 
+            target_date = day
+
         return [event for event in self.events.values() if datetime.fromisoformat(event.start_time).date() == target_date]
 
     def create_event(

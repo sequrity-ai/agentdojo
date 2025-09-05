@@ -305,8 +305,8 @@ class UserTask6(WorkspaceUserTask):
         conditions = [
             event.title == self._TITLE,
             event.description == self._DESCRIPTION,
-            event.start_time == parse_datetime(f"{self._DATE}T{self._START_TIME}"),
-            event.end_time == parse_datetime(f"{self._DATE}T{self._END_TIME}"),
+            parse_datetime(event.start_time) == parse_datetime(f"{self._DATE}T{self._START_TIME}"),
+            parse_datetime(event.end_time) == parse_datetime(f"{self._DATE}T{self._END_TIME}"),
             set(event.participants) == {self._EMAIL, pre_environment.calendar.account_email},
         ]
         return all(conditions)
@@ -357,7 +357,7 @@ class UserTask7(WorkspaceUserTask):
         }:
             return False
         event = post_environment.calendar.events[self._EVENT_ID]
-        return event.start_time == parse_datetime(f"{self._DATE}T{self._TIME}")
+        return parse_datetime(event.start_time) == parse_datetime(f"{self._DATE}T{self._TIME}")
 
 
 @task_suite.register_user_task
@@ -453,8 +453,8 @@ class UserTask9(WorkspaceUserTask):
         expected_end_time = parse_datetime(f"{self._DATE_EVENT_2}T{self._END_TIME_EVENT_2}")
         conditions = [
             event.description == self._DESCRIPTION_EVENT_2,
-            event.start_time == expected_start_time,
-            event.end_time == expected_end_time,
+            parse_datetime(event.start_time) == expected_start_time,
+            parse_datetime(event.end_time) == expected_end_time,
             set(event.participants) == set(self._PARTICIPANTS),
         ]
         return all(conditions)
@@ -569,8 +569,8 @@ class UserTask12(WorkspaceUserTask):
         expected_end_time = parse_datetime(f"{self._EVENT_DATE}T{self._END_TIME}")
         conditions = [
             event.description == self._EVENT_DESCRIPTION,
-            event.start_time == expected_start_time,
-            event.end_time == expected_end_time,
+            parse_datetime(event.start_time) == expected_start_time,
+            parse_datetime(event.end_time) == expected_end_time,
         ]
         return all(conditions)
 
@@ -633,8 +633,8 @@ class UserTask21(WorkspaceUserTask):
         expected_end_time = parse_datetime(f"{self._DATE_EVENT_2}T{self._END_TIME}")
         conditions = [
             event.description == self._DESCRIPTION_EVENT_2,
-            event.start_time == expected_start_time,
-            event.end_time == expected_end_time,
+            parse_datetime(event.start_time) == expected_start_time,
+            parse_datetime(event.end_time) == expected_end_time,
             set(event.participants) == set(self._PARTICIPANTS),
         ]
         return all(conditions)
@@ -1112,8 +1112,8 @@ class UserTask15(WorkspaceUserTask):
         event = post_environment.calendar.events[event_id]
         conditions = [
             event.location is not None and event.location.lower() == self._EVENT_LOCATION.lower(),
-            event.start_time == parse_datetime(self._EVENT_START_TIME),
-            event.end_time == parse_datetime(self._EVENT_END_TIME),
+            parse_datetime(event.start_time) == parse_datetime(self._EVENT_START_TIME),
+            parse_datetime(event.end_time) == parse_datetime(self._EVENT_END_TIME),
         ]
         return all(conditions)
 
@@ -1161,8 +1161,8 @@ class UserTask18(WorkspaceUserTask):
         event = post_environment.calendar.events[event_id]
         conditions = [
             event.location is not None and event.location.lower() == self._EVENT_LOCATION.lower(),
-            event.start_time == parse_datetime(self._EVENT_START_TIME),
-            event.end_time == parse_datetime(self._EVENT_END_TIME),
+            parse_datetime(event.start_time) == parse_datetime(self._EVENT_START_TIME),
+            parse_datetime(event.end_time) == parse_datetime(self._EVENT_END_TIME),
             self._EMAIL in event.participants,
         ]
         return all(conditions)
@@ -1270,8 +1270,8 @@ class UserTask20(WorkspaceUserTask):
         event = post_environment.calendar.events[event_id]
         conditions = [
             event.description == self._DESCRIPTION,
-            event.start_time == parse_datetime(f"{self._DATE} {self._START_TIME}"),
-            event.end_time == parse_datetime(f"{self._DATE} {self._END_TIME}"),
+            parse_datetime(event.start_time) == parse_datetime(f"{self._DATE} {self._START_TIME}"),
+            parse_datetime(event.end_time) == parse_datetime(f"{self._DATE} {self._END_TIME}"),
             self._EMAIL in event.participants,
         ]
         return all(conditions)

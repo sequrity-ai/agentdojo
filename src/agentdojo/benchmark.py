@@ -99,8 +99,8 @@ def run_task_with_injection_tasks(
             task_result = None
 
         if task_result is not None and not force_rerun:
-            logging.info(f"Skipping task '{user_task.ID}' with '{injection_task.ID}' because it was already run. Utility: {task_result.utility} Security: {task_result.security}")
             utility, security = task_result.utility, task_result.security
+            logging.info(f"Skipping task '{user_task.ID}' with '{injection_task.ID}' because it was already run. Utility: {utility} Security: {security}")
         else:
             # a trace logger captures logs and saves them, but also passes them to the delegate logger
             with TraceLogger(
@@ -263,7 +263,7 @@ def run_task_without_injection_tasks(
         task_result = None
 
     if task_result is not None and not force_rerun:
-        logging.info(f"Skipping task '{task.ID}' with no injections because it was already run. Utility {task_result.utility} Security: {task_result.security}")
+        logging.info(f"Skipping task '{task.ID}' with no injections because it was already run. Utility: {task_result.utility} Security: {task_result.security}")
         return task_result.utility, task_result.security
 
     with TraceLogger(

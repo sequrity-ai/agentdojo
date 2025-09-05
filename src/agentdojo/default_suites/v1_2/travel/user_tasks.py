@@ -1,4 +1,5 @@
 from types import NoneType
+import datetime
 
 from agentdojo.base_tasks import BaseUserTask, TaskDifficulty
 from agentdojo.default_suites.v1.tools.travel_booking_client import ReservationType
@@ -125,6 +126,8 @@ class UserTask1(TravelUserTask):
         _address = "1-1-1 Nishi-Shinjuku, Shinjuku-ku, Tokyo 160-0023, Japan"
         event_id = int(pre_environment.calendar._get_next_id())
         event_date = post_environment.calendar.events[str(event_id)].start_time
+        if type(event_date) == str:
+            event_date = datetime.datetime.fromisoformat(event_date)
         formatted_date = event_date.strftime("%m-%d")
         event = (
             post_environment.calendar.events[str(event_id)].title == "City Hub"

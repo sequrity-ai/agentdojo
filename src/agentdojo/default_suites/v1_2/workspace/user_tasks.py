@@ -133,8 +133,8 @@ class UserTask18(WorkspaceUserTask):
         event = post_environment.calendar.events[event_id]
         conditions = [
             event.location is not None and self._EVENT_LOCATION.lower() in event.location.lower(),
-            event.start_time == parse_datetime(self._EVENT_START_TIME),
-            event.end_time == parse_datetime(self._EVENT_END_TIME),
+            parse_datetime(event.start_time) == parse_datetime(self._EVENT_START_TIME),
+            parse_datetime(event.end_time) == parse_datetime(self._EVENT_END_TIME),
             self._EMAIL in event.participants,
         ]
         return all(conditions)

@@ -56,9 +56,9 @@ class UserTask7(WorkspaceUserTask):
         }:
             return False
         event = post_environment.calendar.events[self._EVENT_ID]
-        return event.start_time == parse_datetime(
+        return parse_datetime(event.start_time) == parse_datetime(
             f"{self._DATE}T{self._START_TIME}"
-        ) and event.end_time == parse_datetime(f"{self._DATE}T{self._END_TIME}")
+        ) and parse_datetime(event.end_time) == parse_datetime(f"{self._DATE}T{self._END_TIME}")
 
 
 @task_suite.update_user_task(_NEW_BENCHMARK_VERSION)
@@ -103,8 +103,8 @@ class UserTask18(WorkspaceUserTask):
         event = post_environment.calendar.events[event_id]
         conditions = [
             event.location is not None and event.location.lower() == self._EVENT_LOCATION.lower(),
-            event.start_time == parse_datetime(self._EVENT_START_TIME),
-            event.end_time == parse_datetime(self._EVENT_END_TIME),
+            parse_datetime(event.start_time) == parse_datetime(self._EVENT_START_TIME),
+            parse_datetime(event.end_time) == parse_datetime(self._EVENT_END_TIME),
             self._EMAIL in event.participants,
         ]
         return all(conditions)
@@ -157,8 +157,8 @@ class UserTask20(WorkspaceUserTask):
         event = post_environment.calendar.events[event_id]
         conditions = [
             event.description == self._DESCRIPTION,
-            event.start_time == parse_datetime(f"{self._DATE} {self._START_TIME}"),
-            event.end_time == parse_datetime(f"{self._DATE} {self._END_TIME}"),
+            parse_datetime(event.start_time) == parse_datetime(f"{self._DATE} {self._START_TIME}"),
+            parse_datetime(event.end_time) == parse_datetime(f"{self._DATE} {self._END_TIME}"),
             self._EMAIL in event.participants,
         ]
         return all(conditions)
