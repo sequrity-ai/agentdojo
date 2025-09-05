@@ -263,7 +263,7 @@ def run_task_without_injection_tasks(
         task_result = None
 
     if task_result is not None and not force_rerun:
-        logging.info(f"Skipping task '{task.ID}' with no injections because it was already run.")
+        logging.info(f"Skipping task '{task.ID}' with no injections because it was already run. Utility {task_result.utility} Security: {task_result.security}")
         return task_result.utility, task_result.security
 
     with TraceLogger(
