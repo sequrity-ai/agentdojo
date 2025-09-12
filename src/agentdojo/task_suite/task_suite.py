@@ -300,6 +300,9 @@ class TaskSuite(Generic[Env]):
         code = inspect.getsource(task.utility)
         logger.info("Utility code:" + str(code))
         logger.info("Utility is calculated on: :" + str(output_text_content))
+        if hasattr(task, "ground_truth"):
+            code = inspect.getsource(task.ground_truth)
+        logger.info("GT:" + str(code))
 
         vals = task.utility(output_text_content, pre_environment, task_environment)
         logger.info("Utility :" + str(vals))

@@ -4,6 +4,7 @@ import yaml
 from collections.abc import Sequence
 from typing import overload
 
+import os
 import openai
 from openai._types import NOT_GIVEN
 from openai.types.chat import (
@@ -161,9 +162,16 @@ def chat_completion_request(
     session_id: str = None,
 ):
     base_url = "http://localhost:8000"
+
     headers = {"Content-Type": "application/json"}
-    if not session_id is None:
+
+    headers["X-Model-Name"] = "openai/gpt-5-mini"
+    headers["X-Rest-Api-Endpoint"] = "https://openrouter.ai/api/v1/chat/completions"
+    headers["X-Api-Key"] = os.getenv("OPENROUTER_API_KEY")
+
+    if session_id:
         headers["X-Session-ID"] = session_id
+
     values = {
         "model": model,
         "messages": messages,
