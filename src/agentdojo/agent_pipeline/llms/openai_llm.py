@@ -189,7 +189,7 @@ def chat_completion_request(
     response = api_response.json()
     # temporary
     if (response is not None) and ('usage' in response) and (response['usage'] is not None) and ('session' in response['usage']):
-        session_usage = response['usage']['session']['token_usage']
+        session_usage = response['usage']
         # except:
         #     breakpoint()
         response["usage"] = {
