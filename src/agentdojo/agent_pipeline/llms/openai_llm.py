@@ -186,7 +186,7 @@ def chat_completion_request(
         timeout=3000,
     )
 
-    print("Got unparsed:", api_response )
+    print("Got unparsed:", api_response, ":", api_response.text )
     response = api_response.json()
     print("Got json:", response)
 
