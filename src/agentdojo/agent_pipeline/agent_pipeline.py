@@ -69,7 +69,11 @@ def _get_local_model_id(port) -> str:
 
 def get_llm(provider: str, model: str, model_id: str | None, tool_delimiter: str) -> BasePipelineElement:
     if provider == "openai":
-        client = openai.OpenAI(api_key="test", base_url="http://localhost:8000/v1/")
+        client = openai.OpenAI(
+            api_key="",
+            base_url="",
+        )
+
         llm = OpenAILLM(client, model)
     elif provider == "anthropic":
         client = anthropic.Anthropic()

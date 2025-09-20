@@ -161,32 +161,36 @@ def chat_completion_request(
     temperature: float | None = 0.0,
     session_id: str = None,
 ):
-    base_url = "http://localhost:8000"
-
-    headers = {"Content-Type": "application/json"}
-
-    headers["X-Model-Name"] = "openai/gpt-5-mini"
-    headers["X-Rest-Api-Endpoint"] = "https://openrouter.ai/api/v1/chat/completions"
-    headers["X-Api-Key"] = os.getenv("OPENROUTER_API_KEY")
+    headers={
+        "Content-Type": "application/json",
+        "X-Sequrity-Api-Key" :os.environ["X_Sequrity_Api_Key"],
+        "X-Rest-Api-Endpoint":os.environ["X_Rest_Api_Endpoint"],
+        "X-Api-Key": os.environ["X_Api_Key"], 
+    }
 
     if session_id:
         headers["X-Session-ID"] = session_id
 
     values = {
-        "model": model,
+        "model": os.environ["X_Model_Type"],
         "messages": messages,
         "tools": tools,
         "reasoning_effort": reasoning_effort,
         "temperature": temperature,
     }
 
+    tourl = "https://api.sequrity.ai/v1/chat/completions"
     api_response = requests.post(
-            f"{base_url}/v1/chat/completions", 
-            json=values,
-            headers=headers,
-            timeout=3000,
+        tourl,
+        json=values,
+        headers=headers,
+        timeout=3000,
     )
+
+    print("Got unparsed:", api_response )
     response = api_response.json()
+    print("Got json:", response)
+
     # temporary
     if (response is not None) and ('usage' in response) and (response['usage'] is not None) and ('session' in response['usage']):
         session_usage = response['usage']
