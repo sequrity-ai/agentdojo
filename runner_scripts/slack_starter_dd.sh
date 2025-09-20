@@ -1,0 +1,10 @@
+uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py --model gpt-4o-2024-05-13  -s slack -ut user_task_1  --force-rerun &
+uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py --model gpt-4o-2024-05-13  -s slack -ut user_task_4  --force-rerun &
+uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py --model gpt-4o-2024-05-13  -s slack -ut user_task_6  --force-rerun &
+uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py --model gpt-4o-2024-05-13  -s slack -ut user_task_11  --force-rerun &
+uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py --model gpt-4o-2024-05-13  -s slack -ut user_task_15  --force-rerun &
+uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py --model gpt-4o-2024-05-13  -s slack -ut user_task_16  --force-rerun &
+uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py --model gpt-4o-2024-05-13  -s slack -ut user_task_17  --force-rerun &
+uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py --model gpt-4o-2024-05-13  -s slack -ut user_task_18  --force-rerun &
+uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py --model gpt-4o-2024-05-13  -s slack -ut user_task_19  --force-rerun &
+uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py --model gpt-4o-2024-05-13  -s slack -ut user_task_20  --force-rerun &

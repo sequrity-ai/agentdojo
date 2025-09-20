@@ -1,0 +1,1 @@
+uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py --model gpt-4o-2024-05-13  -s slack -ut user_task_2 -ut user_task_3 -ut user_task_7 -ut user_task_8 -ut user_task_10 -ut user_task_13 -ut user_task_14 -ut user_task_17 

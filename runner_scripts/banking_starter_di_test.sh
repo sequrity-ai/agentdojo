@@ -1,0 +1,1 @@
+uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py --model gpt-4o-2024-05-13  -s banking -ut user_task_1 -ut user_task_3 -ut user_task_4 
