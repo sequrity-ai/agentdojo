@@ -179,9 +179,8 @@ def chat_completion_request(
         "temperature": temperature,
     }
 
-    tourl = "https://api.sequrity.ai/v1/chat/completions"
     api_response = requests.post(
-        tourl,
+        os.environ["ENDPOINT_ADDRESS"],
         json=values,
         headers=headers,
         timeout=3000,
