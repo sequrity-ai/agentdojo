@@ -161,15 +161,26 @@ def chat_completion_request(
     temperature: float | None = 0.0,
     session_id: str = None,
 ):
+
+    tool_policies = ""
     headers={
         "Content-Type": "application/json",
         "X-Sequrity-Api-Key" :os.environ["X_Sequrity_Api_Key"],
         "X-Rest-Api-Endpoint":os.environ["X_Rest_Api_Endpoint"],
         "X-Api-Key": os.environ["X_Api_Key"], 
+        'X-Security-Policy': json.dumps({
+            "strict_mode": False, 
+            "allow_undefined_tools": True, 
+            "fail_fast": False, 
+            "tool_policies": tool_policies,
+        }),
+        'X-Security-Features': json.dumps({"operating_mode": "dual-llm"}),
     }
+
 
     if session_id:
         headers["X-Session-ID"] = session_id
+    print("--- setting session id:", session_id)
 
     values = {
         "model": os.environ["X_Model_Type"],
@@ -179,8 +190,9 @@ def chat_completion_request(
         "temperature": temperature,
     }
 
+    url = os.environ["ENDPOINT_ADDRESS"]
     api_response = requests.post(
-        os.environ["ENDPOINT_ADDRESS"],
+        url,
         json=values,
         headers=headers,
         timeout=3000,
@@ -188,7 +200,7 @@ def chat_completion_request(
 
     print("Got unparsed:", api_response, ":", api_response.text )
     response = api_response.json()
-    print("Got json:", response)
+    #print("Got json:", response)
 
     # temporary
     if (response is not None) and ('usage' in response) and (response['usage'] is not None) and ('session' in response['usage']):
