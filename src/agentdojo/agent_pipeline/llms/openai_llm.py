@@ -1,13 +1,14 @@
 import json
-import requests
-import yaml
+import os
 from collections.abc import Sequence
 from typing import overload
 
-import os
 import openai
+import requests
+import yaml
 from openai._types import NOT_GIVEN
 from openai.types.chat import (
+    ChatCompletion,
     ChatCompletionAssistantMessageParam,
     ChatCompletionContentPartTextParam,
     ChatCompletionDeveloperMessageParam,
@@ -21,11 +22,21 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
 )
 from openai.types.shared_params import FunctionDefinition
-from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random_exponential
-from openai.types.chat import ChatCompletion
+from tenacity import (
+    retry,
+    retry_if_not_exception_type,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 
 from agentdojo.agent_pipeline.base_pipeline_element import BasePipelineElement
-from agentdojo.functions_runtime import EmptyEnv, Env, Function, FunctionCall, FunctionsRuntime
+from agentdojo.functions_runtime import (
+    EmptyEnv,
+    Env,
+    Function,
+    FunctionCall,
+    FunctionsRuntime,
+)
 from agentdojo.types import (
     ChatAssistantMessage,
     ChatMessage,
@@ -82,7 +93,8 @@ def _message_to_openai(message: ChatMessage, model_name: str) -> ChatCompletionM
     match message["role"]:
         case "system":
             return ChatCompletionDeveloperMessageParam(
-                role="developer", content=_content_blocks_to_openai_content_blocks(message)
+                role="developer",
+                content=_content_blocks_to_openai_content_blocks(message),
             )
         case "user":
             return ChatCompletionUserMessageParam(
@@ -104,8 +116,7 @@ def _message_to_openai(message: ChatMessage, model_name: str) -> ChatCompletionM
             if message["tool_call_id"] is None:
                 raise ValueError("`tool_call_id` should be specified for OpenAI.")
             res = ChatCompletionToolMessageParam(
-                # content=message["error"] or _content_blocks_to_openai_content_blocks(message),
-                content=message["error"] or message['content'][0]['content'],
+                content=message["error"] or message["content"][0]["content"],
                 tool_call_id=message["tool_call_id"],
                 role="tool",
                 name=message["tool_call"].function,  # type: ignore -- this is actually used, and is important!
@@ -123,18 +134,26 @@ def _openai_to_tool_call(tool_call: ChatCompletionMessageToolCall) -> FunctionCa
     )
 
 
-def _assistant_message_to_content(message: ChatCompletionMessage) -> list[MessageContentBlock] | None:
+def _assistant_message_to_content(
+    message: ChatCompletionMessage,
+) -> list[MessageContentBlock] | None:
     if message.content is None:
         return None
     return [text_content_block_from_string(message.content)]
 
 
-def _openai_to_assistant_message(message: ChatCompletionMessage) -> ChatAssistantMessage:
+def _openai_to_assistant_message(
+    message: ChatCompletionMessage,
+) -> ChatAssistantMessage:
     if message.tool_calls is not None:
         tool_calls = [_openai_to_tool_call(tool_call) for tool_call in message.tool_calls]
     else:
         tool_calls = None
-    return ChatAssistantMessage(role="assistant", content=_assistant_message_to_content(message), tool_calls=tool_calls)
+    return ChatAssistantMessage(
+        role="assistant",
+        content=_assistant_message_to_content(message),
+        tool_calls=tool_calls,
+    )
 
 
 def _function_to_openai(f: Function) -> ChatCompletionToolParam:
@@ -161,11 +180,9 @@ def chat_completion_request(
     temperature: float | None = 0.0,
     session_id: str = None,
 ):
-    headers={
+    headers = {
         "Content-Type": "application/json",
-        "X-Sequrity-Api-Key" :os.environ["X_Sequrity_Api_Key"],
-        "X-Rest-Api-Endpoint":os.environ["X_Rest_Api_Endpoint"],
-        "X-Api-Key": os.environ["X_Api_Key"], 
+        "Authorization": f"Bearer {os.environ['SEQURITY_API_KEY']}",
     }
 
     if session_id:
@@ -186,36 +203,50 @@ def chat_completion_request(
         timeout=3000,
     )
 
-    print("Got unparsed:", api_response, ":", api_response.text )
+    print("Got unparsed:", api_response, ":", api_response.text)
+
+    # Check for HTTP errors
+    if api_response.status_code != 200:
+        error_detail = "Unknown error"
+        try:
+            error_response = api_response.json()
+            error_detail = error_response.get("detail", f"HTTP {api_response.status_code}")
+        except:
+            error_detail = f"HTTP {api_response.status_code}: {api_response.text}"
+
+        # Raise an appropriate exception based on status code
+        if api_response.status_code == 401:
+            raise RuntimeError(f"Authentication failed: {error_detail}")
+        elif api_response.status_code == 400:
+            raise RuntimeError(f"Bad request: {error_detail}")
+        elif api_response.status_code == 422:
+            raise RuntimeError(f"Unprocessable entity: {error_detail}")
+        else:
+            raise RuntimeError(f"API error: {error_detail}")
+
     response = api_response.json()
     print("Got json:", response)
 
     # temporary
-    if (response is not None) and ('usage' in response) and (response['usage'] is not None) and ('session' in response['usage']):
-        session_usage = response['usage']
-        # except:
-        #     breakpoint()
+    if (
+        (response is not None)
+        and ("usage" in response)
+        and (response["usage"] is not None)
+        and ("session" in response["usage"])
+    ):
+        session_usage = response["usage"]
         response["usage"] = {
-            'prompt_tokens': session_usage['prompt_tokens'],
-            'completion_tokens': session_usage['completion_tokens'], 
-            'total_tokens': session_usage['total_tokens']
+            "prompt_tokens": session_usage["prompt_tokens"],
+            "completion_tokens": session_usage["completion_tokens"],
+            "total_tokens": session_usage["total_tokens"],
         }
     else:
-        response['usage'] = {
-            'prompt_tokens': -1,
-            'completion_tokens': -1,
-            'total_tokens': -1
+        response["usage"] = {
+            "prompt_tokens": -1,
+            "completion_tokens": -1,
+            "total_tokens": -1,
         }
     return ChatCompletion(**response)
-    # return reponse
-    # return client.chat.completions.create(
-    #     model=model,
-    #     messages=messages,
-    #     tools=tools or NOT_GIVEN,
-    #     tool_choice="auto" if tools else NOT_GIVEN,
-    #     temperature=temperature or NOT_GIVEN,
-    #     reasoning_effort=reasoning_effort or NOT_GIVEN,
-    # )
 
 
 class OpenAILLM(BasePipelineElement):
@@ -251,8 +282,13 @@ class OpenAILLM(BasePipelineElement):
         openai_messages = [_message_to_openai(message, self.model) for message in messages]
         openai_tools = [_function_to_openai(tool) for tool in runtime.functions.values()]
         completion = chat_completion_request(
-            self.client, self.model, openai_messages, 
-            openai_tools, self.reasoning_effort, self.temperature, self.session_id
+            self.client,
+            self.model,
+            openai_messages,
+            openai_tools,
+            self.reasoning_effort,
+            self.temperature,
+            self.session_id,
         )
         self.session_id = getattr(completion, "id") if hasattr(completion, "id") else None
         output = _openai_to_assistant_message(completion.choices[0].message)
@@ -261,7 +297,13 @@ class OpenAILLM(BasePipelineElement):
 
 
 class OpenAILLMToolFilter(BasePipelineElement):
-    def __init__(self, prompt: str, client: openai.OpenAI, model: str, temperature: float | None = 0.0) -> None:
+    def __init__(
+        self,
+        prompt: str,
+        client: openai.OpenAI,
+        model: str,
+        temperature: float | None = 0.0,
+    ) -> None:
         self.prompt = prompt
         self.client = client
         self.model = model
@@ -275,7 +317,10 @@ class OpenAILLMToolFilter(BasePipelineElement):
         messages: Sequence[ChatMessage] = [],
         extra_args: dict = {},
     ) -> tuple[str, FunctionsRuntime, Env, Sequence[ChatMessage], dict]:
-        messages = [*messages, ChatUserMessage(role="user", content=[text_content_block_from_string(self.prompt)])]
+        messages = [
+            *messages,
+            ChatUserMessage(role="user", content=[text_content_block_from_string(self.prompt)]),
+        ]
         openai_messages = [_message_to_openai(message, self.model) for message in messages]
         openai_tools = [_function_to_openai(tool) for tool in runtime.functions.values()]
         completion = self.client.chat.completions.create(
