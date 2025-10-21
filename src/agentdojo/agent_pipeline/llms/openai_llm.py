@@ -163,15 +163,14 @@ def chat_completion_request(
 ):
 
     tool_policies = ""
-    max_retry_attempts = 3
-    clear_history_every_n_attempts = 1
+    max_retry_attempts = 10
+    clear_history_every_n_attempts = 2
     retry_on_policy_violation = True
     allow_undefined_tools = True
     fail_fast=True
     auto_gen_policies = False
     dual_llm_mode=True
     strict_mode = False
-
 
     headers={
         "Content-Type": "application/json",
@@ -186,7 +185,7 @@ def chat_completion_request(
 
         'X-Security-Config': json.dumps({
           "min_num_tools_for_filtering": 2,
-          "cache_tool_result": "always",
+          "cache_tool_result": "always", # "none"
           "force_to_cache": [], # you can tell what tool calls can be cached
           "max_pllm_attempts": max_retry_attempts,
           "clear_history_every_n_attempts": clear_history_every_n_attempts,
@@ -205,13 +204,14 @@ def chat_completion_request(
 
     if session_id:
         headers["X-Session-ID"] = session_id
+
     print("--- setting session id:", session_id)
 
     values = {
         "model": os.environ["X_Model_Type"],
         "messages": messages,
         "tools": tools,
-        "reasoning_effort": "low",#reasoning_effort,
+        "reasoning_effort": reasoning_effort,
         "temperature": temperature,
     }
 
@@ -225,7 +225,7 @@ def chat_completion_request(
 
     print("Got unparsed:", api_response, ":", api_response.text )
     response = api_response.json()
-    #print("Got json:", response)
+    session_id = api_response.headers.get('X-Session-Id', None)
 
     # temporary
     if (response is not None) and ('usage' in response) and (response['usage'] is not None) and ('session' in response['usage']):
@@ -241,7 +241,7 @@ def chat_completion_request(
             'completion_tokens': -1,
             'total_tokens': -1
         }
-    return ChatCompletion(**response)
+    return (ChatCompletion(**response), session_id)
     # return reponse
     # return client.chat.completions.create(
     #     model=model,
@@ -285,11 +285,12 @@ class OpenAILLM(BasePipelineElement):
     ) -> tuple[str, FunctionsRuntime, Env, Sequence[ChatMessage], dict]:
         openai_messages = [_message_to_openai(message, self.model) for message in messages]
         openai_tools = [_function_to_openai(tool) for tool in runtime.functions.values()]
-        completion = chat_completion_request(
+        completion, session_id = chat_completion_request(
             self.client, self.model, openai_messages, 
             openai_tools, self.reasoning_effort, self.temperature, self.session_id
         )
-        self.session_id = getattr(completion, "id") if hasattr(completion, "id") else None
+        self.session_id = session_id
+
         output = _openai_to_assistant_message(completion.choices[0].message)
         messages = [*messages, output]
         return query, runtime, env, messages, extra_args
