@@ -163,18 +163,43 @@ def chat_completion_request(
 ):
 
     tool_policies = ""
+    max_retry_attempts = 3
+    clear_history_every_n_attempts = 1
+    retry_on_policy_violation = True
+    allow_undefined_tools = True
+    fail_fast=True
+    auto_gen_policies = False
+    dual_llm_mode=True
+    strict_mode = False
+
+
     headers={
         "Content-Type": "application/json",
-        "X-Sequrity-Api-Key" :os.environ["X_Sequrity_Api_Key"],
-        "X-Rest-Api-Endpoint":os.environ["X_Rest_Api_Endpoint"],
+        "Authorization" : f"Bearer {os.environ['X_Sequrity_Api_Key']}",
         "X-Api-Key": os.environ["X_Api_Key"], 
-        'X-Security-Policy': json.dumps({
-            "strict_mode": False, 
-            "allow_undefined_tools": True, 
-            "fail_fast": False, 
-            "tool_policies": tool_policies,
+
+        "X-Security-Features":  json.dumps([
+          {"feature_name": "Dual LLM" if dual_llm_mode else "Single LLM", 
+              "config_json": json.dumps({"mode": "strict" if strict_mode else "standard"})}, # or strict
+          {"feature_name": "Long Program Support", "config_json": json.dumps({"mode": "base"})},
+        ]),
+
+        'X-Security-Config': json.dumps({
+          "min_num_tools_for_filtering": 2,
+          "cache_tool_result": "always",
+          "force_to_cache": [], # you can tell what tool calls can be cached
+          "max_pllm_attempts": max_retry_attempts,
+          "clear_history_every_n_attempts": clear_history_every_n_attempts,
+          "retry_on_policy_violation": retry_on_policy_violation,
         }),
-        'X-Security-Features': json.dumps({"operating_mode": "dual-llm"}),
+
+        'X-Security-Policy': json.dumps({
+          "language": "sqrt",
+          "allow_undefined_tools": allow_undefined_tools,
+          "fail_fast": fail_fast,
+          "auto_gen": auto_gen_policies,
+          "codes": tool_policies
+        })
     }
 
 
@@ -186,7 +211,7 @@ def chat_completion_request(
         "model": os.environ["X_Model_Type"],
         "messages": messages,
         "tools": tools,
-        "reasoning_effort": reasoning_effort,
+        "reasoning_effort": "low",#reasoning_effort,
         "temperature": temperature,
     }
 
@@ -205,8 +230,6 @@ def chat_completion_request(
     # temporary
     if (response is not None) and ('usage' in response) and (response['usage'] is not None) and ('session' in response['usage']):
         session_usage = response['usage']
-        # except:
-        #     breakpoint()
         response["usage"] = {
             'prompt_tokens': session_usage['prompt_tokens'],
             'completion_tokens': session_usage['completion_tokens'], 
