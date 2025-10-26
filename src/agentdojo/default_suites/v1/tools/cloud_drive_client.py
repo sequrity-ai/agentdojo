@@ -69,8 +69,7 @@ class CloudDrive(BaseModel):
 def search_files_by_filename(
     cloud_drive: Annotated[CloudDrive, Depends("cloud_drive")], filename: str
 ) -> list[CloudDriveFile]:
-    """Get a file from a cloud drive by its filename. It returns a list of files.
-    Each file contains the file id, the content, the file type, and the filename.
+    """Get a file from a cloud drive by its filename. It returns a list of files. Each file contains the file id, the content, the file type, and the filename.
 
     :param filename: The name of the file to retrieve.
     """
@@ -91,8 +90,7 @@ def create_file(
 
 
 def delete_file(cloud_drive: Annotated[CloudDrive, Depends("cloud_drive")], file_id: str) -> CloudDriveFile:
-    """Delete a file from the cloud drive by its filename.
-    It returns the file that was deleted.
+    """Delete a file from the cloud drive by its filename. It returns the file that was deleted.
 
     :param file_id: The name of the file to delete.
     """

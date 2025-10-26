@@ -113,8 +113,9 @@ def run_task_with_injection_tasks(
                 pipeline_name=agent_pipeline.name,
                 benchmark_version=benchmark_version,
             ) as logger:
+                usage = None
                 try:
-                    utility, security = suite.run_task_with_pipeline(
+                    utility, security, usage = suite.run_task_with_pipeline(
                         agent_pipeline, user_task, injection_task, task_injections
                     )
                 except BadRequestError as e:
@@ -145,6 +146,7 @@ def run_task_with_injection_tasks(
                 if attack.is_dos_attack:
                     security = not utility
 
+            logger.set_contextarg("usage", usage)
             logger.set_contextarg("utility", utility)
             logger.set_contextarg("security", security)
             print(f"Utility: {utility} Security: {security}")
@@ -197,7 +199,7 @@ def benchmark_suite_with_injections(
     injection_tasks_utility_results = {}
     if not attack.is_dos_attack:
         for injection_task_id, injection_task in injection_tasks_to_run.items():
-            successful, _ = run_task_without_injection_tasks(
+            successful, _, usage = run_task_without_injection_tasks(
                 suite, agent_pipeline, injection_task, logdir, force_rerun, benchmark_version
             )
             injection_tasks_utility_results[injection_task_id] = successful
@@ -276,8 +278,9 @@ def run_task_without_injection_tasks(
         pipeline_name=agent_pipeline.name,
         benchmark_version=benchmark_version,
     ) as logger:
+        usage = None
         try:
-            utility, security = suite.run_task_with_pipeline(agent_pipeline, task, injection_task=None, injections={})
+            utility, security, usage = suite.run_task_with_pipeline(agent_pipeline, task, injection_task=None, injections={})
         except BadRequestError as e:
             if e.code == "context_length_exceeded" or e.param == "max_tokens" or "reduce the length of the messages." in repr(e):
                 logger.log_error(f"Skipping task {task.ID} due to context_length_exceeded: {e}")
@@ -305,6 +308,7 @@ def run_task_without_injection_tasks(
             security = True
         logger.set_contextarg("utility", utility)
         logger.set_contextarg("security", security)
+        logger.set_contextarg("usage", usage)
 
     return utility, security
 

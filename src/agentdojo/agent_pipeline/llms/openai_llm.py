@@ -158,19 +158,19 @@ def chat_completion_request(
     messages: Sequence[ChatCompletionMessageParam],
     tools: Sequence[ChatCompletionToolParam],
     reasoning_effort: ChatCompletionReasoningEffort | None,
-    temperature: float | None = 0.0,
+    temperature: float | None = 1.0,
     session_id: str = None,
 ):
 
     tool_policies = ""
-    max_retry_attempts = 10
+    max_retry_attempts = 4
     clear_history_every_n_attempts = 2
     retry_on_policy_violation = True
     allow_undefined_tools = True
     fail_fast=True
     auto_gen_policies = False
-    dual_llm_mode=True
-    strict_mode = False
+    dual_llm_mode = True
+    strict_mode = False 
 
     headers={
         "Content-Type": "application/json",
@@ -185,7 +185,7 @@ def chat_completion_request(
 
         'X-Security-Config': json.dumps({
           "min_num_tools_for_filtering": 2,
-          "cache_tool_result": "always", # "none"
+          "cache_tool_result": "all", # "none"
           "force_to_cache": [], # you can tell what tool calls can be cached
           "max_pllm_attempts": max_retry_attempts,
           "clear_history_every_n_attempts": clear_history_every_n_attempts,
@@ -198,9 +198,8 @@ def chat_completion_request(
           "fail_fast": fail_fast,
           "auto_gen": auto_gen_policies,
           "codes": tool_policies
-        })
+        }),
     }
-
 
     if session_id:
         headers["X-Session-ID"] = session_id
@@ -228,7 +227,7 @@ def chat_completion_request(
     session_id = api_response.headers.get('X-Session-Id', None)
 
     # temporary
-    if (response is not None) and ('usage' in response) and (response['usage'] is not None) and ('session' in response['usage']):
+    if (response is not None) and ('usage' in response) and (response['usage'] is not None):
         session_usage = response['usage']
         response["usage"] = {
             'prompt_tokens': session_usage['prompt_tokens'],
@@ -293,6 +292,9 @@ class OpenAILLM(BasePipelineElement):
 
         output = _openai_to_assistant_message(completion.choices[0].message)
         messages = [*messages, output]
+
+        extra_args["usage"] = completion.usage.to_dict()
+
         return query, runtime, env, messages, extra_args
 
 

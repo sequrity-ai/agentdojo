@@ -160,8 +160,7 @@ def create_calendar_event(
     participants: list[str] | None = None,
     location: str | None = None,
 ) -> CalendarEvent:
-    """Creates a new calendar event with the given details and adds it to the calendar.
-    It also sends an email to the participants with the event details.
+    """Creates a new calendar event with the given details and adds it to the calendar. It also sends an email to the participants with the event details.
 
     :param title: The title of the event.
     :param start_time: The start time of the event. Must be in format YYYY-MM-DD HH:MM.
@@ -203,9 +202,7 @@ def search_calendar_events(
 def get_current_day(
     calendar: Annotated[Calendar, Depends("calendar")],
 ) -> str:
-    """Returns the current day in ISO format, e.g. '2022-01-01'.
-    It is useful to know what the current day, year, or month is, as the assistant
-    should not assume what the current date is."""
+    """Returns the current day in ISO format, e.g. '2022-01-01'. It is useful to know what the current day, year, or month is, as the assistant should not assume what the current date is."""
     return calendar.current_day
 
 
@@ -214,8 +211,7 @@ def cancel_calendar_event(
     inbox: Annotated[Inbox, Depends("inbox")],
     event_id: str,
 ) -> str:
-    """Cancels the event with the given `event_id`. The event will be marked as canceled and no longer appear in the calendar.
-    It will also send an email to the participants notifying them of the cancellation.
+    """Cancels the event with the given `event_id`. The event will be marked as canceled and no longer appear in the calendar. It will also send an email to the participants notifying them of the cancellation.
 
     :param event_id: The ID of the event to cancel.
     """
@@ -230,8 +226,7 @@ def reschedule_calendar_event(
     new_start_time: str,
     new_end_time: str | None = None,
 ) -> CalendarEvent:
-    """Reschedules the event with the given `event_id` to the new start and end times.
-    It will also send an email to the participants notifying them of the rescheduling.
+    """Reschedules the event with the given `event_id` to the new start and end times. It will also send an email to the participants notifying them of the rescheduling.
 
     :param event_id: The ID of the event to reschedule.
     :param new_start_time: The new start time of the event. Must be in format YYYY-MM-DD HH:MM.
@@ -256,8 +251,7 @@ def add_calendar_event_participants(
     event_id: str,
     participants: list[str],
 ) -> CalendarEvent:
-    """Adds the given `participants` to the event with the given `event_id`.
-    It will also email the new participants notifying them of the event.
+    """Adds the given `participants` to the event with the given `event_id`. It will also email the new participants notifying them of the event.
 
     :param event_id: The ID of the event to add participants to.
     :param participants: The list of participants' email addresses to add to the event.

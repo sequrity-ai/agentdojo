@@ -394,10 +394,12 @@ class TaskSuite(Generic[Env]):
         runtime = runtime_class(self.tools)
         model_output = None
         messages = []
+        extra_args = {}
+
         for _ in range(3):
             # Run the user task
             try:
-                _, _, task_environment, messages, _ = agent_pipeline.query(prompt, runtime, task_environment)
+                _, _, task_environment, messages, extra_args = agent_pipeline.query(prompt, runtime, task_environment)
             except AbortAgentError as e:
                 # get last environment and messages
                 task_environment = e.task_environment
@@ -422,9 +424,13 @@ class TaskSuite(Generic[Env]):
             functions_stack_trace,
         )
 
+        usage = None
+        if "usage" in extra_args:
+            usage = extra_args["usage"]
+
         # Early return if no injection was intended
         if injection_task is None:
-            return utility, True
+            return utility, True, usage
 
         security = self._check_task_result(
             injection_task,
@@ -434,7 +440,7 @@ class TaskSuite(Generic[Env]):
             functions_stack_trace,
         )
 
-        return utility, security
+        return utility, security, usage
 
     def check(self, check_injectable: bool = True) -> tuple[bool, tuple[dict[str, tuple[bool, str]], dict[str, bool]]]:
         injection_defaults = self.get_injection_vector_defaults()

@@ -146,8 +146,7 @@ class Inbox(BaseModel):
 
 
 def get_unread_emails(inbox: Annotated[Inbox, Depends("inbox")]) -> list[Email]:
-    """Returns all the unread emails in the inbox. Each email has a sender, a subject, and a body.
-    The emails are marked as read after this function is called."""
+    """Returns all the unread emails in the inbox. Each email has a sender, a subject, and a body. The emails are marked as read after this function is called."""
     return inbox.get_unread()
 
 
@@ -198,8 +197,7 @@ def search_emails(
     query: str,
     sender: str | None = None,
 ) -> list[Email]:
-    """Searches for emails in the inbox that contain the given query in the subject or body. If `address` is provided,
-    only emails from that address are searched.
+    """Searches for emails in the inbox that contain the given query in the subject or body. If `address` is provided, only emails from that address are searched.
 
     :param query: The query to search for in the email subject or body. If empty, all emails are returned.
     :param sender: The email address of the sender. If `null`, all emails are searched. Use `search_contacts_by_name`
@@ -236,8 +234,7 @@ def get_draft_emails(inbox: Annotated[Inbox, Depends("inbox")]) -> list[Email]:
 
 
 def search_contacts_by_name(inbox: Annotated[Inbox, Depends("inbox")], query: str) -> list[EmailContact]:
-    """Finds contacts in the inbox's contact list by name.
-    It returns a list of contacts that match the given name.
+    """Finds contacts in the inbox's contact list by name. It returns a list of contacts that match the given name.
 
     :param query: The name of the contacts to search for.
     """
@@ -245,8 +242,7 @@ def search_contacts_by_name(inbox: Annotated[Inbox, Depends("inbox")], query: st
 
 
 def search_contacts_by_email(inbox: Annotated[Inbox, Depends("inbox")], query: str) -> list[EmailContact]:
-    """Finds contacts in the inbox's contact list by email.
-    It returns a list of contacts that match the given email.
+    """Finds contacts in the inbox's contact list by email. It returns a list of contacts that match the given email.
 
     :param query: The email of the contacts to search for.
     """
