@@ -97,6 +97,19 @@ def _get_dependencies(function: Callable[P, T]) -> dict[str, Depends]:
     return dependencies
 
 
+import typing
+import json
+import pydantic
+def get_output_desc(output_type)->str:
+    if issubclass(output_type, pydantic.BaseModel):
+        descriptor = str(output_type.schema_json())
+    else:
+        descriptor = str(output_type)
+    
+    return descriptor
+
+    
+
 def make_function(function: Callable[P, T]) -> Function:
     """Creates a [`Function`][agentdojo.functions_runtime.Function] instance from a function.
 
@@ -126,9 +139,13 @@ def make_function(function: Callable[P, T]) -> Function:
     function_docs = parse(function.__doc__)
     if function_docs.short_description is None:
         raise ValueError(f"Function {function.__name__} has no short description")
+    output_type = inspect.signature(function).return_annotation
+
+    output_desc = "\nOutput schema:" + get_output_desc(output_type)
+
     return Function[P, T](
         name=function.__name__,
-        description=function_docs.short_description.replace("None", "null"),
+        description=function_docs.short_description.replace("None", "null") + output_desc,
         parameters=_parse_args(function.__name__, function_docs.params, inspect.signature(function)),
         run=function,
         dependencies=dependencies,

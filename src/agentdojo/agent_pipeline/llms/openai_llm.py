@@ -163,13 +163,13 @@ def chat_completion_request(
 ):
 
     tool_policies = ""
-    max_retry_attempts = 4
+    max_retry_attempts = 10
     clear_history_every_n_attempts = 2
     retry_on_policy_violation = True
     allow_undefined_tools = True
     fail_fast=True
     auto_gen_policies = False
-    dual_llm_mode = True
+    dual_llm_mode=False
     strict_mode = False 
 
     headers={
@@ -227,7 +227,7 @@ def chat_completion_request(
     session_id = api_response.headers.get('X-Session-Id', None)
 
     # temporary
-    if (response is not None) and ('usage' in response) and (response['usage'] is not None):
+    if (response is not None) and ('usage' in response) and (response['usage'] is not None) and ('session' in response['usage']):
         session_usage = response['usage']
         response["usage"] = {
             'prompt_tokens': session_usage['prompt_tokens'],
@@ -292,9 +292,6 @@ class OpenAILLM(BasePipelineElement):
 
         output = _openai_to_assistant_message(completion.choices[0].message)
         messages = [*messages, output]
-
-        extra_args["usage"] = completion.usage.to_dict()
-
         return query, runtime, env, messages, extra_args
 
 
