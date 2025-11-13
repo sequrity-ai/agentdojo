@@ -162,17 +162,18 @@ def chat_completion_request(
     session_id: str = None,
 ):
 
-    tool_policies = ""
+    tool_policies = "" 
     max_retry_attempts = 3
-    clear_history_every_n_attempts = 5
+    clear_history_every_n_attempts = 1
     retry_on_policy_violation = True
     allow_undefined_tools = True
-    fail_fast=True
-    auto_gen_policies = False
-    dual_llm_mode = True 
-    strict_mode = False 
+    fail_fast         = True
+    auto_gen_policies = False 
+    dual_llm_mode     = True 
+    strict_mode       = False 
     max_nested_session_depth = 2
-    min_num_tools_for_filtering = 20
+    min_num_tools_for_filtering = 50
+    pllm_debug_info_level = "minimal" #"minimal", "normal", "extra"
 
     headers={
         "Content-Type": "application/json",
@@ -193,6 +194,7 @@ def chat_completion_request(
           "clear_history_every_n_attempts": clear_history_every_n_attempts,
           "retry_on_policy_violation": retry_on_policy_violation,
           "max_nested_session_depth": max_nested_session_depth,
+          "pllm_debug_info_level": pllm_debug_info_level,
         }),
 
         'X-Security-Policy': json.dumps({

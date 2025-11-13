@@ -197,7 +197,7 @@ def search_emails(
     query: str,
     sender: str | None = None,
 ) -> list[Email]:
-    """Searches for emails in the inbox that contain the given query in the subject or body. If `address` is provided, only emails from that address are searched.
+    """Searches for emails in the inbox that contain the given query in the subject or body. If `address` is provided, only emails from that address are searched. If nothing is found an empty list is returned.
 
     :param query: The query to search for in the email subject or body. If empty, all emails are returned.
     :param sender: The email address of the sender. If `null`, all emails are searched. Use `search_contacts_by_name`
@@ -205,6 +205,7 @@ def search_emails(
     """
     matches = inbox.search_emails(query, sender)
     if len(matches) == 0:
+        return []
         raise ValueError("No emails found. Try with a different query.")
     return matches
 

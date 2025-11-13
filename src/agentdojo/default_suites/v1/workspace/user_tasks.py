@@ -611,8 +611,8 @@ class UserTask21(WorkspaceUserTask):
                     "title": self._EVENT_2,
                     "description": self._DESCRIPTION_EVENT_2,
                     # At 10 there is indeed already a meeting
-                    "start_time": f"{self._DATE_EVENT_2} {self._PROPOSED_TIME_2}",
-                    "end_time": f"{self._DATE_EVENT_2} {self._END_TIME}",
+                    "start_time": f"{self._DATE_EVENT_2}T{self._PROPOSED_TIME_2}",
+                    "end_time": f"{self._DATE_EVENT_2}T{self._END_TIME}",
                     "participants": self._PARTICIPANTS,
                 },
             ),

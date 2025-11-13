@@ -143,11 +143,12 @@ def append_to_file(
 
 
 def search_files(cloud_drive: Annotated[CloudDrive, Depends("cloud_drive")], query: str) -> list[CloudDriveFile]:
-    """Search for files in the cloud drive by content.
+    """Search for files in the cloud drive by content. If the funtion fails it returns empty list.
 
     :param query: The string to search for in the files.
     """
     matches = cloud_drive.search_files(query)
     if len(matches) == 0:
+        return []
         raise ValueError(f"No files found with the given query ('{query}'). Try a different search term.")
     return matches
