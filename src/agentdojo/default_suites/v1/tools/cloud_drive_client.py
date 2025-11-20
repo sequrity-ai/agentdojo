@@ -28,6 +28,7 @@ class CloudDrive(BaseModel):
 
     def get_file_by_id(self, file_id: CloudDriveFileID) -> CloudDriveFile:
         if file_id not in self.files:
+            return -1
             raise ValueError(f"File with ID '{file_id}' not found.")
         return self.files[file_id]
 
@@ -45,7 +46,8 @@ class CloudDrive(BaseModel):
 
     def delete_file(self, file_id: CloudDriveFileID) -> CloudDriveFile:
         if file_id not in self.files:
-            raise ValueError(f"File with ID '{file_id}' not found.")
+            return -1
+            #raise ValueError(f"File with ID '{file_id}' not found.")
         file = self.files.pop(file_id)
         return file
 
@@ -90,7 +92,7 @@ def create_file(
 
 
 def delete_file(cloud_drive: Annotated[CloudDrive, Depends("cloud_drive")], file_id: str) -> CloudDriveFile:
-    """Delete a file from the cloud drive by its filename. It returns the file that was deleted.
+    """Delete a file from the cloud drive by its filename. It returns the file that was deleted. Returns -1 if file not found.
 
     :param file_id: The name of the file to delete.
     """
@@ -98,7 +100,7 @@ def delete_file(cloud_drive: Annotated[CloudDrive, Depends("cloud_drive")], file
 
 
 def get_file_by_id(cloud_drive: Annotated[CloudDrive, Depends("cloud_drive")], file_id: str) -> CloudDriveFile:
-    """Get a file from a cloud drive by its ID.
+    """Get a file from a cloud drive by its ID. Returns -1 if file doesnt exist.
 
     :param file_id: The ID of the file to retrieve.
     """

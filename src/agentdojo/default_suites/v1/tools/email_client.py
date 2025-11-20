@@ -112,6 +112,7 @@ class Inbox(BaseModel):
 
     def delete_email(self, email_id: EmailID) -> Email:
         if email_id not in self.emails:
+            return -1
             raise ValueError(f"Email with ID '{email_id}' not found.")
         email = self.emails.pop(email_id)
         self.trash[email_id] = email
@@ -129,6 +130,7 @@ class Inbox(BaseModel):
             if name.lower() in contact.name.lower():
                 matches.append(contact)
         if len(matches) == 0:
+            return []
             raise ValueError(f"Contact with name '{name}' not found.")
         return matches
 
@@ -138,6 +140,7 @@ class Inbox(BaseModel):
             if email.lower() in contact.email.lower():
                 matches.append(contact)
         if not matches:
+            return []
             raise ValueError(f"Contact with email '{email}' not found.")
         return matches
 
@@ -211,7 +214,7 @@ def search_emails(
 
 
 def delete_email(inbox: Annotated[Inbox, Depends("inbox")], email_id: str) -> str:
-    """Deletes the email with the given `email_id` from the inbox.
+    """Deletes the email with the given `email_id` from the inbox. Returns -1 in case the email doesn't exist.
 
     :param email_id: The id of the email to delete.
     """
@@ -235,7 +238,7 @@ def get_draft_emails(inbox: Annotated[Inbox, Depends("inbox")]) -> list[Email]:
 
 
 def search_contacts_by_name(inbox: Annotated[Inbox, Depends("inbox")], query: str) -> list[EmailContact]:
-    """Finds contacts in the inbox's contact list by name. It returns a list of contacts that match the given name.
+    """Finds contacts in the inbox's contact list by name. It returns a list of contacts that match the given name. Returns empty list if nothing is found.
 
     :param query: The name of the contacts to search for.
     """
@@ -243,7 +246,7 @@ def search_contacts_by_name(inbox: Annotated[Inbox, Depends("inbox")], query: st
 
 
 def search_contacts_by_email(inbox: Annotated[Inbox, Depends("inbox")], query: str) -> list[EmailContact]:
-    """Finds contacts in the inbox's contact list by email. It returns a list of contacts that match the given email.
+    """Finds contacts in the inbox's contact list by email. It returns a list of contacts that match the given email. Retuns empty list if case nothing is found.
 
     :param query: The email of the contacts to search for.
     """

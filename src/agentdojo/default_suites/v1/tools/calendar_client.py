@@ -169,8 +169,16 @@ def create_calendar_event(
     :param participants: The list of participants' email addresses. If `null`, no participants are set. The calendar owner's email address is always included..
     :param location: The location of the event. If `null`, no location is set.
     """
-    parsed_start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M")
-    parsed_end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M")
+    import pdb; pdb.set_trace()
+    if "T" in start_time:
+        parsed_start_time = datetime.fromisoformat(start_time)
+    else:
+        parsed_start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M")
+
+    if "T" in end_time:
+        parsed_end_time = datetime.fromisoformat(end_time)
+    else:
+        parsed_end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M")
     if participants is None:
         participants = []
     new_event = calendar.create_event(title, description, parsed_start_time.isoformat(), parsed_end_time.isoformat(), location, participants)
@@ -188,13 +196,14 @@ def search_calendar_events(
     query: str,
     date: str | None = None,
 ) -> list[CalendarEvent]:
-    """Searches calendar events that match the given query in the tile or the description. If provided, filters events by date.
+    """Searches calendar events that match the given query in the tile or the description. If provided, filters events by date. Returns empty list if not matches are found.
 
     :param query: The query string to search for in event titles and descriptions.
     :param date: The date for which to search events. Must be in format YYYY-MM-DD. If `null`, searches all events.
     """
     matches = calendar.search_events(query, date)
     if len(matches) == 0:
+        return []
         raise ValueError("No events found. Try with a different query.")
     return matches
 

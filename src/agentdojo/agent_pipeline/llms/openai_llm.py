@@ -163,7 +163,7 @@ def chat_completion_request(
 ):
 
     tool_policies = "" 
-    max_retry_attempts = 3
+    max_retry_attempts = 5
     clear_history_every_n_attempts = 1
     retry_on_policy_violation = True
     allow_undefined_tools = True
@@ -171,8 +171,8 @@ def chat_completion_request(
     auto_gen_policies = False 
     dual_llm_mode     = True 
     strict_mode       = False 
-    max_nested_session_depth = 2
-    min_num_tools_for_filtering = 50
+    max_nested_session_depth = 0
+    min_num_tools_for_filtering = 2
     pllm_debug_info_level = "minimal" #"minimal", "normal", "extra"
 
     headers={
