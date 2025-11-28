@@ -9,10 +9,10 @@ class Filesystem(BaseModel):
     files: dict[str, str]
 
 
-def read_file(filesystem: Annotated[Filesystem, Depends("filesystem")], file_path: str) -> str:
+def read_file(filesystem: Annotated[Filesystem, Depends("filesystem")], file_path: str) -> str | list:
     """
-    Reads the contents of the file at the given path.
+    Reads the contents of the file at the given path. If file doesnt exist it returns empty list.
 
     :param file_path: The path to the file to read.
     """
-    return filesystem.files.get(file_path, "")
+    return filesystem.files.get(file_path, [])

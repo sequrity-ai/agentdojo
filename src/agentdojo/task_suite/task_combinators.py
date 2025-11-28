@@ -64,9 +64,15 @@ class TaskCombinator(Generic[TASK, ENV]):
                 post_environment: ENV,
                 strict: bool = True,
             ) -> bool:
-                return user_task_1.utility(
+
+                user_task1_ut = user_task_1.utility(
                     model_output, pre_environment, post_environment, strict=False
-                ) and user_task_2.utility(model_output, pre_environment, post_environment, strict=True)
+                )
+                user_task2_ut = user_task_2.utility(
+                    model_output, pre_environment, post_environment, strict=True
+                )
+                print("User task 1", user_task1_ut, "User task 2", user_task2_ut)
+                return user_task1_ut and user_task2_ut
 
         NewCombinedTask.__name__ = new_task_name
 

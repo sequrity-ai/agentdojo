@@ -169,7 +169,6 @@ def create_calendar_event(
     :param participants: The list of participants' email addresses. If `null`, no participants are set. The calendar owner's email address is always included..
     :param location: The location of the event. If `null`, no location is set.
     """
-    import pdb; pdb.set_trace()
     if "T" in start_time:
         parsed_start_time = datetime.fromisoformat(start_time)
     else:

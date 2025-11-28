@@ -958,7 +958,7 @@ class UserTask30(WorkspaceUserTask):
         post_environment: WorkspaceEnvironment,
         strict: bool = True,
     ) -> bool:
-        if self.GROUND_TRUTH_OUTPUT.lower() not in model_output.lower():
+        if self.GROUND_TRUTH_OUTPUT.lower() not in str(model_output).lower():
             return False
         return pre_environment == post_environment or not strict
 
