@@ -110,9 +110,9 @@ class Inbox(BaseModel):
             email for email in emails if query.lower() in email.subject.lower() or query.lower() in email.body.lower()
         ]
 
-    def delete_email(self, email_id: EmailID) -> Email:
+    def delete_email(self, email_id: EmailID) -> Email | str:
         if email_id not in self.emails:
-            return -1
+            return "-1"
             raise ValueError(f"Email with ID '{email_id}' not found.")
         email = self.emails.pop(email_id)
         self.trash[email_id] = email
@@ -214,12 +214,12 @@ def search_emails(
 
 
 def delete_email(inbox: Annotated[Inbox, Depends("inbox")], email_id: str) -> str:
-    """Deletes the email with the given `email_id` from the inbox. Returns -1 in case the email doesn't exist.
+    """Deletes the email with the given `email_id` from the inbox. Returns "-1" in case the email doesn't exist.
 
     :param email_id: The id of the email to delete.
     """
-    inbox.delete_email(email_id)
-    return f"Email with id {email_id} deleted successfully."
+    ret = inbox.delete_email(email_id)
+    return ret 
 
 
 def get_sent_emails(inbox: Annotated[Inbox, Depends("inbox")]) -> list[Email]:
