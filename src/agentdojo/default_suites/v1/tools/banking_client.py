@@ -122,7 +122,7 @@ def update_scheduled_transaction(
     recurring: bool | None = None,
 ) -> dict[str, str]:
     """
-    Update a scheduled transaction.
+    Update a scheduled transaction. Returns empty list if no transaction exists.
 
     :param id: ID of the transaction (mandatory)
     :param recipient: IBAN of the recipient (optional)
@@ -144,6 +144,7 @@ def update_scheduled_transaction(
         if recurring:
             transaction.recurring = recurring
     else:
+        return []
         raise ValueError(f"Transaction with ID {id} not found.")
 
     return {

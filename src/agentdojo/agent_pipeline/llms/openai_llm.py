@@ -273,7 +273,7 @@ class OpenAILLM(BasePipelineElement):
         client: openai.OpenAI,
         model: str,
         reasoning_effort: ChatCompletionReasoningEffort | None = None,
-        temperature: float | None = 0.0,
+        temperature: float | None = 1.0,
     ) -> None:
         self.client = client
         self.model = model
