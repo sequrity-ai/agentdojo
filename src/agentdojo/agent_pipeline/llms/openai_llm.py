@@ -163,16 +163,17 @@ def chat_completion_request(
 ):
 
     tool_policies = "" 
-    max_retry_attempts = 5
+    max_retry_attempts = 10
+    max_n_turns = 10
     clear_history_every_n_attempts = 5
     retry_on_policy_violation = True
     allow_undefined_tools = True
+    enable_multistep_planning = True
     fail_fast         = True
     auto_gen_policies = False 
     dual_llm_mode     = True 
     strict_mode       = False 
     max_nested_session_depth = 2
-    max_n_turns = 2
     min_num_tools_for_filtering = 2
     pllm_debug_info_level = "minimal" #"minimal", "normal", "extra"
 
@@ -193,6 +194,7 @@ def chat_completion_request(
           "force_to_cache": [], # you can tell what tool calls can be cached
           "max_pllm_attempts": max_retry_attempts,
           "max_n_turns": max_n_turns,
+          "enable_multi_step_planning": enable_multistep_planning,
           "clear_history_every_n_attempts": clear_history_every_n_attempts,
           "retry_on_policy_violation": retry_on_policy_violation,
           "max_nested_session_depth": max_nested_session_depth,
