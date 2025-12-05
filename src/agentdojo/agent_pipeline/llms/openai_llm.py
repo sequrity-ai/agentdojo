@@ -165,15 +165,15 @@ def chat_completion_request(
     tool_policies = "" 
     max_retry_attempts = 10
     max_n_turns = 10
-    clear_history_every_n_attempts = 5
+    clear_history_every_n_attempts = 5 # only works in single-step mode
     retry_on_policy_violation = True
     allow_undefined_tools = True
-    enable_multistep_planning = True
+    enable_multistep_planning = False
     fail_fast         = True
     auto_gen_policies = False 
     dual_llm_mode     = True 
     strict_mode       = False 
-    max_nested_session_depth = 2
+    max_nested_session_depth = 1
     min_num_tools_for_filtering = 2
     pllm_debug_info_level = "minimal" #"minimal", "normal", "extra"
 
@@ -236,19 +236,13 @@ def chat_completion_request(
     session_id = api_response.headers.get('X-Session-Id', None)
 
     # temporary
-    if (response is not None) and ('usage' in response) and (response['usage'] is not None):
-        session_usage = response['usage']
-        response["usage"] = {
-            'prompt_tokens': session_usage['prompt_tokens'],
-            'completion_tokens': session_usage['completion_tokens'], 
-            'total_tokens': session_usage['total_tokens']
-        }
-    else:
-        response['usage'] = {
-            'prompt_tokens': -1,
-            'completion_tokens': -1,
-            'total_tokens': -1
-        }
+    session_usage = response['usage']
+    response["usage"] = {
+        'prompt_tokens': session_usage['prompt_tokens'],
+        'completion_tokens': session_usage['completion_tokens'], 
+        'total_tokens': session_usage['total_tokens']
+    }
+
     return (ChatCompletion(**response), session_id)
     # return reponse
     # return client.chat.completions.create(
