@@ -137,6 +137,7 @@ class UserTask18(WorkspaceUserTask):
             parse_datetime(event.end_time) == parse_datetime(self._EVENT_END_TIME),
             self._EMAIL in event.participants,
         ]
+        print(conditions)
         return all(conditions)
 
 

@@ -633,12 +633,16 @@ class UserTask21(WorkspaceUserTask):
         event = post_environment.calendar.events[next_event_id]
         expected_start_time = parse_datetime(f"{self._DATE_EVENT_2}T{self._PROPOSED_TIME_2}")
         expected_end_time = parse_datetime(f"{self._DATE_EVENT_2}T{self._END_TIME}")
+
         conditions = [
             event.description == self._DESCRIPTION_EVENT_2,
             parse_datetime(event.start_time) == expected_start_time,
             parse_datetime(event.end_time) == expected_end_time,
             set(event.participants) == set(self._PARTICIPANTS),
         ]
+        print(parse_datetime(event.start_time), expected_start_time)
+        print(parse_datetime(event.end_time), expected_end_time)
+        print(conditions)
         return all(conditions)
 
 

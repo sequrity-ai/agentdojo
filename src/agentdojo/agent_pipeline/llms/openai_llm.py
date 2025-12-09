@@ -168,7 +168,7 @@ def chat_completion_request(
     clear_history_every_n_attempts = 5 # only works in single-step mode
     retry_on_policy_violation = True
     allow_undefined_tools = True
-    enable_multistep_planning = False
+    enable_multistep_planning = True
     fail_fast         = True
     auto_gen_policies = False 
     dual_llm_mode     = True 
@@ -235,14 +235,19 @@ def chat_completion_request(
     response = api_response.json()
     session_id = api_response.headers.get('X-Session-Id', None)
 
-    # temporary
-    session_usage = response['usage']
-    response["usage"] = {
-        'prompt_tokens': session_usage['prompt_tokens'],
-        'completion_tokens': session_usage['completion_tokens'], 
-        'total_tokens': session_usage['total_tokens']
-    }
-
+    if (response is not None) and ('usage' in response) and (response['usage'] is not None):
+        session_usage = response['usage']
+        response["usage"] = {
+            'prompt_tokens': session_usage['prompt_tokens'],
+            'completion_tokens': session_usage['completion_tokens'], 
+            'total_tokens': session_usage['total_tokens']
+        }
+    else:
+        response['usage'] = {
+            'prompt_tokens': -1,
+            'completion_tokens': -1,
+            'total_tokens': -1
+        }
     return (ChatCompletion(**response), session_id)
     # return reponse
     # return client.chat.completions.create(
