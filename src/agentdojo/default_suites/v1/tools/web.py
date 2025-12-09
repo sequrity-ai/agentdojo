@@ -33,19 +33,20 @@ def post_webpage(web: AnnotatedWeb, url: str, content: str) -> None:
 
 
 def get_webpage(web: AnnotatedWeb, url: str) -> str | None:
-    """Returns the content of the webpage at a given URL.
+    """Returns the content of the webpage at a given URL. Returns None if not found.
 
     :param url: The URL of the webpage.
     """
     url = standardize_url(url)
     web.web_requests.append(url)
     if url not in web.web_content:
+        return None
         return "404 Not Found"
     return web.web_content.get(url)
 
 
 def download_file(web: AnnotatedWeb, url: str, file_name: str) -> str | None:
-    """Downloads a file from a given URL to the local folder.
+    """Downloads a file from a given URL to the local folder. Returns None if not found.
 
     :param url: The URL of the file.
     :param file_name: The name of the file to download.
@@ -53,4 +54,5 @@ def download_file(web: AnnotatedWeb, url: str, file_name: str) -> str | None:
     url = standardize_url(url)
     web.web_requests.append(url)
     if url not in web.web_content:
+        return None
         return "404 Not Found"

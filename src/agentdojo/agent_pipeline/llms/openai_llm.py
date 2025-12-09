@@ -168,7 +168,7 @@ def chat_completion_request(
     clear_history_every_n_attempts = 5 # only works in single-step mode
     retry_on_policy_violation = True
     allow_undefined_tools = True
-    enable_multistep_planning = False
+    enable_multistep_planning = True
     fail_fast         = True
     auto_gen_policies = False 
     dual_llm_mode     = True 
