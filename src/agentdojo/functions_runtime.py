@@ -103,6 +103,11 @@ import pydantic
 def get_output_desc(output_type)->str:
     if issubclass(output_type, pydantic.BaseModel):
         descriptor = str(output_type.schema_json())
+    elif typing.get_origin(output_type) == list: 
+        descriptor = "["
+        for cl in typing.get_args(output_type):
+            descriptor += get_output_desc(cl) + ", "
+        descriptior = descriptor[:-1] + "]"
     else:
         descriptor = str(output_type)
     
@@ -141,7 +146,9 @@ def make_function(function: Callable[P, T]) -> Function:
         raise ValueError(f"Function {function.__name__} has no short description")
     output_type = inspect.signature(function).return_annotation
 
-    output_desc = "\nOutput schema:" + get_output_desc(output_type)
+
+    f_desc =  get_output_desc(output_type)
+    output_desc = "\nOutput schema:" + f_desc + "\n"
 
     return Function[P, T](
         name=function.__name__,
