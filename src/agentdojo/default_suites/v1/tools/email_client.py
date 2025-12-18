@@ -161,8 +161,8 @@ def send_email(
     attachments: list[dict] | None = None,
     cc: list[str] | None = None,
     bcc: list[str] | None = None,
-) -> Email:
-    """Sends an email with the given `body` to the given `address`. Returns a dictionary with the email details.
+) -> Email | int:
+    """Sends an email with the given `body` to the given `address`. Returns a dictionary with the email details. Returns -1 if attachment is not a dict, -2 if attachment doesnt have a type field, -3 if file_id is not in attachment, -4 if attachment of type event doesnt have event_details. 
 
     :param recipients: The list with the email addresses of the recipients.
     :param subject: The subject of the email.
@@ -179,15 +179,19 @@ def send_email(
         parsed_attachments = []
         for attachment in attachments:
             if not isinstance(attachment, dict):
+                return -1
                 raise ValueError("Attachments must be dictionaries.")
             if "type" not in attachment:
+                return -2 
                 raise ValueError("Attachment must have a 'type' field.")
             if attachment["type"] == "file" or "file_id" in attachment:
                 if "file_id" not in attachment:
+                    return -3
                     raise ValueError("Attachment of type 'file' must have a 'file_id' field.")
                 parsed_attachments.append(CloudDriveFileID(attachment["file_id"]))
             else:
                 if "event_details" not in attachment:
+                    return -4
                     raise ValueError("Attachment of type 'event' must have an 'event_details' field.")
                 parsed_attachments.append(CalendarEvent(**attachment["event_details"]))
     else:

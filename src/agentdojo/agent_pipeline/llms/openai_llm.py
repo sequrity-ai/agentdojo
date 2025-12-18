@@ -165,10 +165,10 @@ def chat_completion_request(
     tool_policies = "" 
     max_retry_attempts = 10
     max_n_turns = 10
-    clear_history_every_n_attempts = 5 # only works in single-step mode
+    clear_history_every_n_attempts = 1 # only works in single-step mode
     retry_on_policy_violation = True
     allow_undefined_tools = True
-    enable_multistep_planning = True
+    enable_multistep_planning = False 
     fail_fast         = True
     auto_gen_policies = False 
     dual_llm_mode     = True 
@@ -203,10 +203,15 @@ def chat_completion_request(
 
         'X-Security-Policy': json.dumps({
           "language": "sqrt",
-          "allow_undefined_tools": allow_undefined_tools,
           "fail_fast": fail_fast,
           "auto_gen": auto_gen_policies,
-          "codes": tool_policies
+          "codes": tool_policies,
+
+          "internal_policy_preset": {
+              "default_allow": allow_undefined_tools,
+              "enable_non_executable_memory": True,
+              "non_executable_memory_enforcement_level": "hard"
+          }
         }),
     }
 
