@@ -10,7 +10,7 @@ from openai import BadRequestError, UnprocessableEntityError
 from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
 from typing_extensions import Self, TypedDict
 
-from agentdojo.agent_pipeline.base_pipeline_element import BasePipelineElement
+from agentdojo.agent_pipeline.base_pipeline_element import BasePipelineElement, defence_params
 from agentdojo.attacks.base_attacks import BaseAttack
 from agentdojo.base_tasks import BaseInjectionTask, BaseUserTask
 from agentdojo.functions_runtime import Env, FunctionCall
@@ -149,6 +149,8 @@ def run_task_with_injection_tasks(
             logger.set_contextarg("usage", usage)
             logger.set_contextarg("utility", utility)
             logger.set_contextarg("security", security)
+            logger.set_contextarg("defence_params", defence_params)
+
             print(f"Utility: {utility} Security: {security}")
 
         utility_results[(user_task.ID, injection_task_id)] = utility
@@ -309,6 +311,7 @@ def run_task_without_injection_tasks(
         logger.set_contextarg("utility", utility)
         logger.set_contextarg("security", security)
         logger.set_contextarg("usage", usage)
+        logger.set_contextarg("defence_params", defence_params)
 
     return utility, security
 

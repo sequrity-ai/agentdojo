@@ -24,7 +24,7 @@ from openai.types.shared_params import FunctionDefinition
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random_exponential
 from openai.types.chat import ChatCompletion
 
-from agentdojo.agent_pipeline.base_pipeline_element import BasePipelineElement
+from agentdojo.agent_pipeline.base_pipeline_element import BasePipelineElement, defence_params
 from agentdojo.functions_runtime import EmptyEnv, Env, Function, FunctionCall, FunctionsRuntime
 from agentdojo.types import (
     ChatAssistantMessage,
@@ -160,22 +160,8 @@ def chat_completion_request(
     reasoning_effort: ChatCompletionReasoningEffort | None,
     temperature: float | None = 1.0,
     session_id: str = None,
+    params: dict = None,
 ):
-
-    tool_policies = "" 
-    max_retry_attempts = 10
-    max_n_turns = 10
-    clear_history_every_n_attempts = 1 # only works in single-step mode
-    retry_on_policy_violation = True
-    allow_undefined_tools = True
-    enable_multistep_planning = False 
-    fail_fast         = True
-    auto_gen_policies = False 
-    dual_llm_mode     = True 
-    strict_mode       = False 
-    max_nested_session_depth = 1
-    min_num_tools_for_filtering = 2
-    pllm_debug_info_level = "minimal" #"minimal", "normal", "extra"
 
     headers={
         "Content-Type": "application/json",
@@ -183,32 +169,37 @@ def chat_completion_request(
         "X-Api-Key": os.environ["X_Api_Key"], 
 
         "X-Security-Features":  json.dumps([
-          {"feature_name": "Dual LLM" if dual_llm_mode else "Single LLM", 
-              "config_json": json.dumps({"mode": "strict" if strict_mode else "standard"})}, # or strict
-          {"feature_name": "Long Program Support", "config_json": json.dumps({"mode": "base"})},
+          {"feature_name": 
+              "Dual LLM" if params['dual_llm_mode'] else "Single LLM", 
+              "config_json": json.dumps({"mode": 
+                  "strict" if params["strict_mode"] else "standard"})}, # or strict
+          {"feature_name": "Long Program Support", 
+              "config_json": json.dumps({"mode": "base"})},
         ]),
 
         'X-Security-Config': json.dumps({
-          "min_num_tools_for_filtering": min_num_tools_for_filtering,
           "cache_tool_result": "all", # "none"
           "force_to_cache": [], # you can tell what tool calls can be cached
-          "max_pllm_attempts": max_retry_attempts,
-          "max_n_turns": max_n_turns,
-          "enable_multi_step_planning": enable_multistep_planning,
-          "clear_history_every_n_attempts": clear_history_every_n_attempts,
-          "retry_on_policy_violation": retry_on_policy_violation,
-          "max_nested_session_depth": max_nested_session_depth,
-          "pllm_debug_info_level": pllm_debug_info_level,
+          "min_num_tools_for_filtering":    params["min_num_tools_for_filtering"],
+          "max_pllm_attempts":              params["max_retry_attempts"],
+          "max_n_turns":                    params["max_n_turns"],
+          "n_plans":                        params["n_plans"],
+          "plan_reduction":                 params["plan_reduction"],
+          "enable_multi_step_planning":     params["enable_multistep_planning"],
+          "clear_history_every_n_attempts": params["clear_history_every_n_attempts"],
+          "retry_on_policy_violation":      params["retry_on_policy_violation"],
+          "max_nested_session_depth":       params["max_nested_session_depth"],
+          "pllm_debug_info_level":          params["pllm_debug_info_level"],
         }),
 
         'X-Security-Policy': json.dumps({
           "language": "sqrt",
-          "fail_fast": fail_fast,
-          "auto_gen": auto_gen_policies,
-          "codes": tool_policies,
+          "fail_fast": params["fail_fast"],
+          "auto_gen":  params["auto_gen_policies"],
+          "codes":     params["tool_policies"],
 
           "internal_policy_preset": {
-              "default_allow": allow_undefined_tools,
+              "default_allow": params["allow_undefined_tools"],
               "enable_non_executable_memory": True,
               "non_executable_memory_enforcement_level": "hard"
           }
@@ -224,7 +215,7 @@ def chat_completion_request(
         "model": os.environ["X_Model_Type"],
         "messages": messages,
         "tools": tools,
-        "reasoning_effort": "low", # reasoning_effort,
+        "reasoning_effort": params["reasoning_effort"],
         "temperature": temperature,
     }
 
@@ -295,11 +286,13 @@ class OpenAILLM(BasePipelineElement):
         messages: Sequence[ChatMessage] = [],
         extra_args: dict = {},
     ) -> tuple[str, FunctionsRuntime, Env, Sequence[ChatMessage], dict]:
+
         openai_messages = [_message_to_openai(message, self.model) for message in messages]
         openai_tools = [_function_to_openai(tool) for tool in runtime.functions.values()]
         completion, session_id = chat_completion_request(
             self.client, self.model, openai_messages, 
-            openai_tools, self.reasoning_effort, self.temperature, self.session_id
+            openai_tools, self.reasoning_effort, self.temperature, self.session_id,
+            defence_params,
         )
         self.session_id = session_id
 

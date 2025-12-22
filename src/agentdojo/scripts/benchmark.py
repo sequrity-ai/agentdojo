@@ -15,6 +15,9 @@ from rich.logging import RichHandler
 from agentdojo.agent_pipeline.agent_pipeline import DEFENSES, AgentPipeline, PipelineConfig
 from agentdojo.attacks.attack_registry import ATTACKS, load_attack
 from agentdojo.benchmark import SuiteResults, benchmark_suite_with_injections, benchmark_suite_without_injections
+from agentdojo.agent_pipeline.base_pipeline_element import defence_params as global_defence_params
+from agentdojo.agent_pipeline.base_pipeline_element import smart_update_headers
+
 from agentdojo.logging import OutputLogger
 from agentdojo.models import ModelsEnum
 from agentdojo.task_suite.load_suites import get_suite, get_suites
@@ -208,6 +211,14 @@ def show_results(suite_name: str, results: SuiteResults, show_security_results: 
     default=tuple(),
     help="The modules to load before running the benchmark. Useful for registering custom attacks, defenses, or suites.",
 )
+@click.option(
+    "--defence-params",
+    "-dp",
+    "defence_params",
+    type=str,
+    default=None,
+)
+
 def main(
     suites: tuple[str, ...],
     model: ModelsEnum,
@@ -224,7 +235,10 @@ def main(
     max_workers: int = 1,
     force_rerun: bool = False,
     modules_to_load: tuple[str, ...] = (),
+    defence_params:str="none",
 ):
+    global global_defence_params
+
     for module in modules_to_load:
         importlib.import_module(module)
 
@@ -236,6 +250,9 @@ def main(
 
     if len(suites) != 1 and len(user_tasks) != 0:
         raise ValueError("A user task can be specified only when one suite is being executed")
+
+    if defence_params is not None and defence_params != "none":
+        global_defence_params = smart_update_headers(global_defence_params, defence_params)
 
     if max_workers == 1:
         results = {}
