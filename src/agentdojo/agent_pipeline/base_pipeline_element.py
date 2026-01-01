@@ -4,40 +4,41 @@ from collections.abc import Sequence
 from agentdojo.functions_runtime import EmptyEnv, Env, FunctionsRuntime
 from agentdojo.types import ChatMessage
 
-
 defence_params = {
     "tool_policies": "",
     "max_retry_attempts": 12,
     "max_n_turns": 20,
     "n_plans": None,
-    "clear_history_every_n_attempts": 4, # only works in single-step mode
+    "clear_history_every_n_attempts": 4,  # only works in single-step mode
     "retry_on_policy_violation": True,
     "allow_undefined_tools": True,
     "fail_fast": True,
     "enable_multistep_planning": False,
-    "reasoning_effort": "low",  #"minimal" #"medium" # low
-    "plan_reduction": "best", # "merge"
+    "reasoning_effort": "low",  # "minimal" #"medium" # low
+    "plan_reduction": "best",  # "merge"
     "auto_gen_policies": False,
     "dual_llm_mode": True,
     "strict_mode": False,
-    "max_nested_session_depth": 1,
     "min_num_tools_for_filtering": 2,
-    "pllm_debug_info_level": "minimal", #"minimal", "normal", "extra"
+    "pllm_debug_info_level": "normal",  # "minimal", "normal", "extra"
+    "reduced_grammar_for_rllm_review": False,
+    "rllm_confidence_score_threshold": 0.3,
 }
 
 import json
+
 
 def smart_update_headers(headers, flat_update_json):
     """
     Deserializes header values, searches for keys provided in 'flat_update_json',
     updates them wherever they are found (nested dicts or lists), and reserializes.
-    
+
     Args:
         headers (dict): The dictionary of headers with JSON-string values.
-        flat_update_json (str): A JSON string of keys/values to update. 
+        flat_update_json (str): A JSON string of keys/values to update.
                                 E.g., '{"max_n_turns": 99, "default_allow": false}'
     """
-    
+
     # 1. Deserialize the update payload
     try:
         updates = json.loads(flat_update_json)

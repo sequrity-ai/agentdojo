@@ -1,13 +1,14 @@
 import json
-import requests
-import yaml
+import os
 from collections.abc import Sequence
 from typing import overload
 
-import os
 import openai
+import requests
+import yaml
 from openai._types import NOT_GIVEN
 from openai.types.chat import (
+    ChatCompletion,
     ChatCompletionAssistantMessageParam,
     ChatCompletionContentPartTextParam,
     ChatCompletionDeveloperMessageParam,
@@ -22,7 +23,6 @@ from openai.types.chat import (
 )
 from openai.types.shared_params import FunctionDefinition
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random_exponential
-from openai.types.chat import ChatCompletion
 
 from agentdojo.agent_pipeline.base_pipeline_element import BasePipelineElement, defence_params
 from agentdojo.functions_runtime import EmptyEnv, Env, Function, FunctionCall, FunctionsRuntime
@@ -105,7 +105,7 @@ def _message_to_openai(message: ChatMessage, model_name: str) -> ChatCompletionM
                 raise ValueError("`tool_call_id` should be specified for OpenAI.")
             res = ChatCompletionToolMessageParam(
                 # content=message["error"] or _content_blocks_to_openai_content_blocks(message),
-                content=message["error"] or message['content'][0]['content'],
+                content=message["error"] or message["content"][0]["content"],
                 tool_call_id=message["tool_call_id"],
                 role="tool",
                 name=message["tool_call"].function,  # type: ignore -- this is actually used, and is important!
@@ -162,48 +162,49 @@ def chat_completion_request(
     session_id: str = None,
     params: dict = None,
 ):
-
-    headers={
+    headers = {
         "Content-Type": "application/json",
-        "Authorization" : f"Bearer {os.environ['X_Sequrity_Api_Key']}",
-        "X-Api-Key": os.environ["X_Api_Key"], 
-
-        "X-Security-Features":  json.dumps([
-          {"feature_name": 
-              "Dual LLM" if params['dual_llm_mode'] else "Single LLM", 
-              "config_json": json.dumps({"mode": 
-                  "strict" if params["strict_mode"] else "standard"})}, # or strict
-          {"feature_name": "Long Program Support", 
-              "config_json": json.dumps({"mode": "base"})},
-        ]),
-
-        'X-Security-Config': json.dumps({
-          "cache_tool_result": "all", # "none"
-          "force_to_cache": [], # you can tell what tool calls can be cached
-          "min_num_tools_for_filtering":    params["min_num_tools_for_filtering"],
-          "max_pllm_attempts":              params["max_retry_attempts"],
-          "max_n_turns":                    params["max_n_turns"],
-          "n_plans":                        params["n_plans"],
-          "plan_reduction":                 params["plan_reduction"],
-          "enable_multi_step_planning":     params["enable_multistep_planning"],
-          "clear_history_every_n_attempts": params["clear_history_every_n_attempts"],
-          "retry_on_policy_violation":      params["retry_on_policy_violation"],
-          "max_nested_session_depth":       params["max_nested_session_depth"],
-          "pllm_debug_info_level":          params["pllm_debug_info_level"],
-        }),
-
-        'X-Security-Policy': json.dumps({
-          "language": "sqrt",
-          "fail_fast": params["fail_fast"],
-          "auto_gen":  params["auto_gen_policies"],
-          "codes":     params["tool_policies"],
-
-          "internal_policy_preset": {
-              "default_allow": params["allow_undefined_tools"],
-              "enable_non_executable_memory": True,
-              "non_executable_memory_enforcement_level": "hard"
-          }
-        }),
+        "Authorization": f"Bearer {os.environ['X_Sequrity_Api_Key']}",
+        "X-Api-Key": os.environ["X_Api_Key"],
+        "X-Security-Features": json.dumps(
+            [
+                {
+                    "feature_name": "Dual LLM" if params["dual_llm_mode"] else "Single LLM",
+                    "config_json": json.dumps({"mode": "strict" if params["strict_mode"] else "standard"}),
+                },  # or strict
+                {"feature_name": "Long Program Support", "config_json": json.dumps({"mode": "base"})},
+            ]
+        ),
+        "X-Security-Config": json.dumps(
+            {
+                "cache_tool_result": "all",  # "none"
+                "force_to_cache": [],  # you can tell what tool calls can be cached
+                "min_num_tools_for_filtering": params["min_num_tools_for_filtering"],
+                "max_pllm_attempts": params["max_retry_attempts"],
+                "max_n_turns": params["max_n_turns"],
+                "n_plans": params["n_plans"],
+                "plan_reduction": params["plan_reduction"],
+                "enable_multi_step_planning": params["enable_multistep_planning"],
+                "clear_history_every_n_attempts": params["clear_history_every_n_attempts"],
+                "retry_on_policy_violation": params["retry_on_policy_violation"],
+                "pllm_debug_info_level": params["pllm_debug_info_level"],
+                "reduced_grammar_for_rllm_review": params["reduced_grammar_for_rllm_review"],
+                "rllm_confidence_score_threshold": params["rllm_confidence_score_threshold"],
+            }
+        ),
+        "X-Security-Policy": json.dumps(
+            {
+                "language": "sqrt",
+                "fail_fast": params["fail_fast"],
+                "auto_gen": params["auto_gen_policies"],
+                "codes": params["tool_policies"],
+                "internal_policy_preset": {
+                    "default_allow": params["allow_undefined_tools"],
+                    "enable_non_executable_memory": True,
+                    "non_executable_memory_enforcement_level": "hard",
+                },
+            }
+        ),
     }
 
     if session_id:
@@ -227,23 +228,19 @@ def chat_completion_request(
         timeout=3000,
     )
 
-    print("Got unparsed:", api_response, ":", api_response.text )
+    print("Got unparsed:", api_response, ":", api_response.text)
     response = api_response.json()
-    session_id = api_response.headers.get('X-Session-Id', None)
+    session_id = api_response.headers.get("X-Session-Id", None)
 
-    if (response is not None) and ('usage' in response) and (response['usage'] is not None):
-        session_usage = response['usage']
+    if (response is not None) and ("usage" in response) and (response["usage"] is not None):
+        session_usage = response["usage"]
         response["usage"] = {
-            'prompt_tokens': session_usage['prompt_tokens'],
-            'completion_tokens': session_usage['completion_tokens'], 
-            'total_tokens': session_usage['total_tokens']
+            "prompt_tokens": session_usage["prompt_tokens"],
+            "completion_tokens": session_usage["completion_tokens"],
+            "total_tokens": session_usage["total_tokens"],
         }
     else:
-        response['usage'] = {
-            'prompt_tokens': -1,
-            'completion_tokens': -1,
-            'total_tokens': -1
-        }
+        response["usage"] = {"prompt_tokens": -1, "completion_tokens": -1, "total_tokens": -1}
     return (ChatCompletion(**response), session_id)
     # return reponse
     # return client.chat.completions.create(
@@ -278,6 +275,10 @@ class OpenAILLM(BasePipelineElement):
         self.reasoning_effort: ChatCompletionReasoningEffort | None = reasoning_effort
         self.session_id = None
 
+    def reset_session(self) -> None:
+        """Reset the session ID to start a new conversation with the endpoint."""
+        self.session_id = None
+
     def query(
         self,
         query: str,
@@ -286,12 +287,16 @@ class OpenAILLM(BasePipelineElement):
         messages: Sequence[ChatMessage] = [],
         extra_args: dict = {},
     ) -> tuple[str, FunctionsRuntime, Env, Sequence[ChatMessage], dict]:
-
         openai_messages = [_message_to_openai(message, self.model) for message in messages]
         openai_tools = [_function_to_openai(tool) for tool in runtime.functions.values()]
         completion, session_id = chat_completion_request(
-            self.client, self.model, openai_messages, 
-            openai_tools, self.reasoning_effort, self.temperature, self.session_id,
+            self.client,
+            self.model,
+            openai_messages,
+            openai_tools,
+            self.reasoning_effort,
+            self.temperature,
+            self.session_id,
             defence_params,
         )
         self.session_id = session_id
@@ -300,6 +305,11 @@ class OpenAILLM(BasePipelineElement):
         messages = [*messages, output]
 
         extra_args["usage"] = completion.usage.to_dict()
+
+        # Reset session when conversation is complete (finish_reason = "stop")
+        if completion.choices[0].finish_reason == "stop":
+            self.reset_session()
+
         return query, runtime, env, messages, extra_args
 
 
