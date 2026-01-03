@@ -19,10 +19,10 @@ defence_params = {
     "auto_gen_policies": False,
     "dual_llm_mode": True,
     "strict_mode": False,
-    "min_num_tools_for_filtering": 10,
+    "min_num_tools_for_filtering": 2,
     "pllm_debug_info_level": "normal",  # "minimal", "normal", "extra"
     "reduced_grammar_for_rllm_review": False,
-    "rllm_confidence_score_threshold": 0.3,
+    "rllm_confidence_score_threshold": None,
 }
 
 import json
