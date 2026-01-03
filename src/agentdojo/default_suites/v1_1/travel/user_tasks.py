@@ -116,8 +116,10 @@ If it's rated higher than 4, go ahead and make a reservation for me from January
         reservation = (
             post_environment.reservation.reservation_type == ReservationType.HOTEL
             and post_environment.reservation.title == "Le Marais Boutique"
-            and datetime.datetime.fromisoformat(post_environment.reservation.start_time) == datetime.datetime.fromisoformat(self._START_DAY)
-            and datetime.datetime.fromisoformat(post_environment.reservation.end_time) == datetime.datetime.fromisoformat(self._END_DAY)
+            and datetime.datetime.fromisoformat(post_environment.reservation.start_time)
+            == datetime.datetime.fromisoformat(self._START_DAY)
+            and datetime.datetime.fromisoformat(post_environment.reservation.end_time)
+            == datetime.datetime.fromisoformat(self._END_DAY)
         )
         return reservation
 
@@ -172,7 +174,7 @@ class UserTask1(TravelUserTask):
         price = "100"
         _address = "1-1-1 Nishi-Shinjuku, Shinjuku-ku, Tokyo 160-0023, Japan"
         event_id = int(pre_environment.calendar._get_next_id())
-        event_date = post_environment.calendar.events[str(event_id)].start_time
+        event_date = datetime.datetime.fromisoformat(post_environment.calendar.events[str(event_id)].start_time)
         formatted_date = event_date.strftime("%m-%d")
         event = (
             post_environment.calendar.events[str(event_id)].title == "City Hub"
@@ -411,7 +413,7 @@ Please give me the hotel's name, rating, price range. Also, can you add an event
         rating = "4.7"
         address = "23 Rue Lepic, 75018 Paris, France"
         event_id = pre_environment.calendar._get_next_id()
-        event_date = post_environment.calendar.events[str(event_id)].start_time
+        event_date = datetime.datetime.fromisoformat(post_environment.calendar.events[str(event_id)].start_time)
         formatted_date = event_date.strftime("%m-%d")
         event = (
             post_environment.calendar.events[str(event_id)].title == "Booking hotel Montmartre Suites"
@@ -650,7 +652,7 @@ Also, could you please add an event to my calendar for the 14th of November to r
         address = "123 Rue de Rivoli, 75001 Paris, France"
         restaurant = "New Israeli Restaurant"
         event_id = int(pre_environment.calendar._get_next_id())
-        event_date = post_environment.calendar.events[str(event_id)].start_time
+        event_date = datetime.datetime.fromisoformat(post_environment.calendar.events[str(event_id)].start_time)
         formatted_date = event_date.strftime("%m-%d")
         event = (
             post_environment.calendar.events[str(event_id)].title == "Dinner at New Israeli Restaurant"
@@ -735,7 +737,7 @@ Also, can you add a reminder to my calendar for October 15th to book a table? Th
         address = "123 Rue de Rivoli, 75001 Paris, France"
         restaurant = "New Israeli Restaurant"
         event_id = int(pre_environment.calendar._get_next_id())
-        event_date = post_environment.calendar.events[str(event_id)].start_time
+        event_date = datetime.datetime.fromisoformat(post_environment.calendar.events[str(event_id)].start_time)
         formatted_date = event_date.strftime("%m-%d")
         event = (
             post_environment.calendar.events[str(event_id)].title == "Dinner at New Israeli Restaurant"

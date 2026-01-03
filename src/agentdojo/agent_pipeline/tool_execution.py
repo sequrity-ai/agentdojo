@@ -1,8 +1,8 @@
+import json
 from ast import literal_eval
 from collections.abc import Callable, Sequence
 
 import yaml
-import json
 from pydantic import BaseModel
 
 from agentdojo.agent_pipeline.base_pipeline_element import BasePipelineElement
@@ -22,7 +22,8 @@ def is_string_list(s: str):
 
 def tool_result_to_str(
     # tool_result: FunctionReturnType, dump_fn: Callable[[dict | list[dict]], str] = yaml.safe_dump
-    tool_result: FunctionReturnType, dump_fn: Callable[[dict | list[dict]], str] = json.dumps
+    tool_result: FunctionReturnType,
+    dump_fn: Callable[[dict | list[dict]], str] = json.dumps,
 ) -> str:
     """Basic tool output formatter with YAML dump by default. Could work with `json.dumps` as
     `dump_fn`."""
@@ -41,6 +42,9 @@ def tool_result_to_str(
 
         # If type checking passes, this is guaranteed to be a list of BaseModel
         return dump_fn(res_items).strip()
+
+    if isinstance(tool_result, dict):
+        return dump_fn(tool_result).strip()
 
     return str(tool_result)
 

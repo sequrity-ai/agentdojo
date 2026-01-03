@@ -100,7 +100,9 @@ def run_task_with_injection_tasks(
 
         if task_result is not None and not force_rerun:
             utility, security = task_result.utility, task_result.security
-            logging.info(f"Skipping task '{user_task.ID}' with '{injection_task.ID}' because it was already run. Utility: {utility} Security: {security}")
+            logging.info(
+                f"Skipping task '{user_task.ID}' with '{injection_task.ID}' because it was already run. Utility: {utility} Security: {security}"
+            )
         else:
             # a trace logger captures logs and saves them, but also passes them to the delegate logger
             with TraceLogger(
@@ -119,7 +121,11 @@ def run_task_with_injection_tasks(
                         agent_pipeline, user_task, injection_task, task_injections
                     )
                 except BadRequestError as e:
-                    if e.code == "context_length_exceeded" or e.param == "max_tokens" or "reduce the length of the messages." in repr(e):
+                    if (
+                        e.code == "context_length_exceeded"
+                        or e.param == "max_tokens"
+                        or "reduce the length of the messages." in repr(e)
+                    ):
                         logger.log_error(
                             f"Skipping task '{user_task.ID}' with '{injection_task.ID}' due to context_length_exceeded: {e}"
                         )
@@ -267,7 +273,9 @@ def run_task_without_injection_tasks(
         task_result = None
 
     if task_result is not None and not force_rerun:
-        logging.info(f"Skipping task '{task.ID}' with no injections because it was already run. Utility: {task_result.utility} Security: {task_result.security}")
+        logging.info(
+            f"Skipping task '{task.ID}' with no injections because it was already run. Utility: {task_result.utility} Security: {task_result.security}"
+        )
         return task_result.utility, task_result.security
 
     with TraceLogger(
@@ -282,9 +290,15 @@ def run_task_without_injection_tasks(
     ) as logger:
         usage = None
         try:
-            utility, security, usage = suite.run_task_with_pipeline(agent_pipeline, task, injection_task=None, injections={})
+            utility, security, usage = suite.run_task_with_pipeline(
+                agent_pipeline, task, injection_task=None, injections={}
+            )
         except BadRequestError as e:
-            if e.code == "context_length_exceeded" or e.param == "max_tokens" or "reduce the length of the messages." in repr(e):
+            if (
+                e.code == "context_length_exceeded"
+                or e.param == "max_tokens"
+                or "reduce the length of the messages." in repr(e)
+            ):
                 logger.log_error(f"Skipping task {task.ID} due to context_length_exceeded: {e}")
                 utility = False
                 security = True
