@@ -1,114 +1,161 @@
+import argparse
 import json
-import logging
-import re
-from collections import defaultdict
 from pathlib import Path
-import os
+from typing import Optional
 
-import matplotlib
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-import seaborn as sns
-from agentdojo.task_suite import get_suites, get_suite
-from agentdojo.types import ChatMessage
-from matplotlib.lines import Line2D
-from pydantic import BaseModel, ConfigDict, model_validator
-from statsmodels.stats import proportion
 
-errors = set()
+# Attempt to import tabulate for nicer tables; fallback if not available
+try:
+    import tabulate  # type: ignore
 
-class TaskResults(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    
-    suite_name: str
-    pipeline_name: str
-    user_task_id: str
-    injection_task_id: str | None
-    attack_type: str | None
-    injections: dict[str, str]
-    messages: list[ChatMessage]
-    error: str | None
-    utility: float
-    security: float
-    duration: float
+    HAS_TABULATE = True
+except ImportError:
+    # If tabulate is not installed, pandas uses a simpler text format, or we can use to_string()
+    HAS_TABULATE = False
 
 
-def load_task_results(pipeline_name, suite_name, user_task, attack_name, injection_task, logdir=Path("runs")):
-    path = logdir / pipeline_name / suite_name / user_task / attack_name / f"{injection_task}.json"
-    with path.open() as f:
-        res_dict = json.load(f)
-    return res_dict 
+def load_run_data(logdir: Path, exclude_suites: list[str] | None = None) -> pd.DataFrame:
+    """
+    Loads run data from the directory structure:
+    logdir / config_name / model_name / suite_name / user_task_id / attack_name / injection_task_id.json
+    """
+    if exclude_suites is None:
+        exclude_suites = ["travel"]
+
+    records = []
+
+    if not logdir.exists():
+        print(f"Error: Log directory '{logdir}' does not exist.")
+        return pd.DataFrame()
+
+    print(f"Scanning {logdir}...")
+
+    # Level 1: Configuration (e.g., config_1)
+    for config_dir in logdir.iterdir():
+        if not config_dir.is_dir() or config_dir.name.startswith("__"):
+            continue
+        config_name = config_dir.name
+
+        # Level 2: Model (e.g., gpt-4o)
+        for model_dir in config_dir.iterdir():
+            if not model_dir.is_dir():
+                continue
+            model_name = model_dir.name
+
+            # Level 3: Suite (e.g., banking, slack)
+            for suite_dir in model_dir.iterdir():
+                if not suite_dir.is_dir():
+                    continue
+                suite_name = suite_dir.name
+
+                if suite_name in exclude_suites:
+                    continue
+
+                # Level 4: User Task (e.g., 1, 2, 3...)
+                for task_dir in suite_dir.iterdir():
+                    if not task_dir.is_dir():
+                        continue
+                    user_task_id = task_dir.name
+
+                    # We are looking for base performance results: attack="none", injection="none"
+                    result_file = task_dir / "none" / "none.json"
+
+                    if not result_file.exists():
+                        continue
+
+                    try:
+                        with open(result_file, encoding="utf-8") as f:
+                            data = json.load(f)
+
+                        usage = data.get("usage") or {}
+                        # Handle potential Nones in usage
+                        if not usage:
+                            usage = {}
+
+                        records.append(
+                            {
+                                "configuration": config_name,
+                                "model": model_name,
+                                "suite": suite_name,
+                                "task_id": user_task_id,
+                                "utility": float(data.get("utility", 0.0)),
+                                "duration": float(data.get("duration", 0.0)),
+                                "prompt_tokens": int(usage.get("prompt_tokens", 0)),
+                                "completion_tokens": int(usage.get("completion_tokens", 0)),
+                                "total_tokens": int(usage.get("total_tokens", 0)),
+                            }
+                        )
+                    except Exception:
+                        # minimal error logging to avoid clutter
+                        pass
+
+    return pd.DataFrame(records)
 
 
+def print_summary(df: pd.DataFrame):
+    if df.empty:
+        print("No run data found in the specified directory.")
+        return
 
-def load_experiment_results(suite_name, pipeline_name, attack_name, logdir=Path("runs")):
-    suite = get_suite("v1", suite_name)
-    results_without_injections = {}
-    results_with_injections = {}
-    
-    for user_task_id in suite.user_tasks.keys():
+    # 1. Overall Summary by Configuration
+    # Aggregating across all suites and tasks
+    grouped_config = df.groupby(["configuration", "model"]).agg(
+        {"utility": "mean", "duration": "mean", "total_tokens": "mean", "task_id": "count"}
+    )
+
+    grouped_config.columns = ["Avg Utility", "Avg Duration (s)", "Avg Total Tokens", "Count"]
+    # Reorder
+    grouped_config = grouped_config[["Count", "Avg Utility", "Avg Duration (s)", "Avg Total Tokens"]]
+
+    print("\n" + "=" * 80)
+    print(" OVERALL SUMMARY (By Configuration & Model)")
+    print("=" * 80)
+    if HAS_TABULATE:
+        # Check if to_markdown is available on the dataframe (requires tabulate installed)
         try:
-            results_without_injections[(user_task_id, None)] = load_task_results(
-                pipeline_name, suite_name, user_task_id, "none", "none", logdir
-            )
-        except:
-            print(f"{user_task_id} doesnt exist...")
-    return results_without_injections
+            print(grouped_config.to_markdown(floatfmt=".4f"))
+        except ImportError:
+            print(grouped_config.to_string(float_format="{:.4f}".format))
+    else:
+        print(grouped_config.to_string(float_format="{:.4f}".format))
+    print("\n")
+
+    # 2. Breakdown by Suite
+    grouped_suite = df.groupby(["configuration", "suite"]).agg(
+        {"utility": "mean", "duration": "mean", "total_tokens": "mean", "task_id": "count"}
+    )
+    grouped_suite.columns = ["Avg Utility", "Avg Duration", "Avg Tokens", "Count"]
+
+    print("\n" + "=" * 80)
+    print(" BREAKDOWN BY SUITE")
+    print("=" * 80)
+    if HAS_TABULATE:
+        try:
+            print(grouped_suite.to_markdown(floatfmt=".4f"))
+        except ImportError:
+            print(grouped_suite.to_string(float_format="{:.4f}".format))
+    else:
+        print(grouped_suite.to_string(float_format="{:.4f}".format))
+    print("\n")
 
 
-def make_dataframe(model_names, attack, logdir):
-    rows = []
-    for model in model_names:
-        print(model)
-        for suite in get_suites("v1"):
-            if suite == "travel":
-                continue
+def main():
+    parser = argparse.ArgumentParser(description="Analyze AgentDojo benchmark runs.")
+    parser.add_argument("--logdir", type=str, default="all_runs", help="Directory containing run logs.")
+    parser.add_argument("--csv-output", type=str, help="Optional path to save dataset as CSV.")
 
-            #if suite != "workspace":
-            #    continue
+    args = parser.parse_args()
+    logdir = Path(args.logdir)
 
-            try:
-                results_without = load_experiment_results(suite, model, attack, logdir=logdir)
-            except Exception as e:
-                print(e)
-                continue
-            utilities = []
-            defence_params = []
-            unsolved = []
-            durations = []
-            usages = []
+    df = load_run_data(logdir)
 
-            for usertask in results_without:
-                try:
-                    #print(usertask[0], int(results_without[usertask]['duration']), "s", 'Utility:', results_without[usertask]['utility'])
-                    utilities.append(results_without[usertask]['utility'])
-                    durations.append(results_without[usertask]['duration'])
-                    defence_params.append(results_without[usertask]['defence_params'])
-                    if "usage" in results_without[usertask]:
-                        usages.append(results_without[usertask]['usage'])
-                    else:
-                        usages.append(None)
-                except:
-                    #print(usertask[0], 'error')
-                    unsolved.append(True)
+    if args.csv_output:
+        df.to_csv(args.csv_output, index=False)
+        print(f"Full dataset saved to {args.csv_output}")
 
-            print("+", suite, "Utility:", np.mean(utilities), "unsolved", sum(unsolved))
-            if len(durations) > 0:
-                print("++Duration:", "mean", np.mean(durations), "medium", np.median(durations), "max", max(durations), "min", min(durations))
-            print("+Tokens:")
-            for tname in ['completion_tokens', 'prompt_tokens', 'total_tokens']:
-                _usages = [i[tname] for i in usages if i is not None]
-                if len(_usages) > 0:
-                    print("++", tname, "mean", np.mean(_usages), "medium", np.median(_usages), "max", max(_usages), "min", min(_usages))
+    print_summary(df)
 
-            #return (utilities, durations, usages, unsolved, defence_params)
 
-model_names = ["gpt-4o-2024-05-13"]#, "singlellm_gpt-4o-2024-05-13", "not_strict_dualllm_gpt-4o-2024-05-13"]
-logdir = "all_runs"
-
-for run_dir in os.listdir(logdir):
-    combined_dir = f"{logdir}/{run_dir}"
-    print(combined_dir)
-    df = make_dataframe(model_names, "none", logdir=Path(combined_dir))
-
+if __name__ == "__main__":
+    main()

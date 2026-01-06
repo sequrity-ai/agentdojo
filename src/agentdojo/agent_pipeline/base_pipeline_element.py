@@ -22,7 +22,7 @@ defence_params = {
     "min_num_tools_for_filtering": 2,
     "pllm_debug_info_level": "normal",  # "minimal", "normal", "extra"
     "reduced_grammar_for_rllm_review": False,
-    "rllm_confidence_score_threshold": None,
+    "rllm_confidence_score_threshold": 0.2,
 }
 
 import json
