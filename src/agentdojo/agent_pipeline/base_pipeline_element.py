@@ -20,7 +20,6 @@ defence_params = {
     "auto_gen_policies": False,
     "dual_llm_mode": True,
     "strict_mode": False,
-    "max_nested_session_depth": 1,
     "min_num_tools_for_filtering": 2,
     "pllm_debug_info_level": "minimal", #"minimal", "normal", "extra"
 }

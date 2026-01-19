@@ -15,12 +15,12 @@ base = "uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py -
 ut_templ = "-ut user_task_{num} "
 command = "{base} -s {suite} " + ut_templ + "{flag}" + " --logdir {logdir} -dp '{configs}'"
 
-max_scripts = 12
+max_scripts = 1
 main_logs_name = "all_runs"
 
 configurations_names = [] 
 
-if False:
+if True:
     configurations_names = [
         ("single_llm_no_tfilter", {"min_num_tools_for_filtering": 100, "dual_llm_mode": False}),
         ("single_llm_with_tfilter", {"min_num_tools_for_filtering": 2, "dual_llm_mode": False}),
@@ -43,13 +43,13 @@ if True:
     for strict in [False]:
         for multistep in [False]:
             for reasoning_lvl in ["low",]:#, "medium", "high"]:
-                for clearup in [1]:
+                for clearup in [1, 2, 4]:
 
                     if multistep and clearup != 1:
                         continue
 
                     configurations_names.append((
-                        f"openrouter_multistep_{multistep}_{reasoning_lvl}_strict_{strict}_clearup_{clearup}", 
+                        f"grllm_multistep_{multistep}_{reasoning_lvl}_strict_{strict}_clearup_{clearup}", 
                         {
                             "enable_multistep_planning": multistep, 
                             "reasoning_effort": reasoning_lvl,
@@ -63,9 +63,10 @@ def run_script(script_command):
     Runs a single bash script command.
     Returns a tuple: (command, return_code, stdout, stderr)
     """
-    #print(f"Starting: {script_command}")
+    print(f"Starting: {script_command}")
     
     # subprocess.run is the modern way to invoke scripts
+
     result = subprocess.run(
         script_command,
         shell=True,          # Allows using string commands like "bash script.sh arg1"

@@ -188,7 +188,6 @@ def chat_completion_request(
           "enable_multi_step_planning":     params["enable_multistep_planning"],
           "clear_history_every_n_attempts": params["clear_history_every_n_attempts"],
           "retry_on_policy_violation":      params["retry_on_policy_violation"],
-          "max_nested_session_depth":       params["max_nested_session_depth"],
           "pllm_debug_info_level":          params["pllm_debug_info_level"],
         }),
 
