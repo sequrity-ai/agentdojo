@@ -189,6 +189,7 @@ def chat_completion_request(
           "clear_history_every_n_attempts": params["clear_history_every_n_attempts"],
           "retry_on_policy_violation":      params["retry_on_policy_violation"],
           "pllm_debug_info_level":          params["pllm_debug_info_level"],
+          "allow_runtime_policy_updates":   True,
         }),
 
         'X-Security-Policy': json.dumps({
