@@ -183,8 +183,8 @@ def chat_completion_request(
           "min_num_tools_for_filtering":    params["min_num_tools_for_filtering"],
           "max_pllm_attempts":              params["max_retry_attempts"],
           "max_n_turns":                    params["max_n_turns"],
-          "n_plans":                        params["n_plans"],
-          "plan_reduction":                 params["plan_reduction"],
+          #"n_plans":                        params["n_plans"],
+          #"plan_reduction":                 params["plan_reduction"],
           "enable_multi_step_planning":     params["enable_multistep_planning"],
           "clear_history_every_n_attempts": params["clear_history_every_n_attempts"],
           "retry_on_policy_violation":      params["retry_on_policy_violation"],
@@ -200,7 +200,6 @@ def chat_completion_request(
           "internal_policy_preset": {
               "default_allow": params["allow_undefined_tools"],
               "enable_non_executable_memory": True,
-              "non_executable_memory_enforcement_level": "hard"
           }
         }),
     }

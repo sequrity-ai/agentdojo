@@ -15,7 +15,7 @@ base = "uv run --env-file .env.local python src/agentdojo/scripts/benchmark.py -
 ut_templ = "-ut user_task_{num} "
 command = "{base} -s {suite} " + ut_templ + "{flag}" + " --logdir {logdir} -dp '{configs}'"
 
-max_scripts = 1
+max_scripts = 12
 main_logs_name = "all_runs"
 
 configurations_names = [] 
