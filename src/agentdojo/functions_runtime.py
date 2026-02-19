@@ -102,17 +102,17 @@ import json
 import pydantic
 import types
 
-def get_output_desc(output_type)->str:
-    if issubclass(output_type, pydantic.BaseModel):
+def get_output_desc(output_type) -> str:
+    if inspect.isclass(output_type) and issubclass(output_type, pydantic.BaseModel):
         descriptor = str(output_type.schema_json())
-    elif typing.get_origin(output_type) in [list, types.UnionType]: 
+    elif typing.get_origin(output_type) in [list, types.UnionType]:
         descriptor = "["
         for cl in typing.get_args(output_type):
             descriptor += get_output_desc(cl) + ", "
-        descriptior = descriptor[:-1] + "]"
+        descriptor = descriptor[:-1] + "]"
     else:
         descriptor = str(output_type)
-    
+
     return descriptor
 
     

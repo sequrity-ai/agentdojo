@@ -26,9 +26,10 @@ dependencies = [
     "rich>=13.7.1",
     "python-dotenv>=1.0.1",
     "google-genai>=1.15.0",
+    "sequrity",
 ]
 readme = "README.md"
-requires-python = ">= 3.10"
+requires-python = ">= 3.11"
 
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -39,7 +40,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Environment :: GPU",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
@@ -117,7 +117,7 @@ docstring-code-format = true
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 ignore = ["**/experimental/**"]
 homepage = "https://agentdojo.spylab.ai"
 repository = "https://github.com/ethz-spylab/agentdojo"

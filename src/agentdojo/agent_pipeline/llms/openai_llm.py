@@ -200,8 +200,10 @@ def chat_completion_request(
 
     sequrity_client = SequrityClient(
         api_key=os.environ["X_Sequrity_Api_Key"],
+        base_url=os.environ.get("ENDPOINT_ADDRESS"),
         control=ControlConfig(
             llm_api_key=os.environ["X_Api_Key"],
+            provider=os.environ.get("X_Provider"),
             features=features,
             security_policy=security_policy,
             fine_grained_config=fine_grained_config,
