@@ -41,7 +41,7 @@ if False:
 
 if True:
     for strict in [False]:
-        for multistep in [False]:
+        for multistep in [True, False]:
             for reasoning_lvl in ["low",]:#, "medium", "high"]:
                 for clearup in [1, 2, 4]:
 
@@ -55,6 +55,7 @@ if True:
                             "reasoning_effort": reasoning_lvl,
                             "strict_mode": strict,
                             "clear_history_every_n_attempts": clearup,
+                            #"disable_rllm": True,
                         }
                     ))
 

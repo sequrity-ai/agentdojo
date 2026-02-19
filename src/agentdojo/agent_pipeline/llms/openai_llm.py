@@ -1,10 +1,8 @@
 import json
-import requests
-import yaml
+import os
 from collections.abc import Sequence
 from typing import overload
 
-import os
 import openai
 from openai._types import NOT_GIVEN
 from openai.types.chat import (
@@ -21,8 +19,10 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
 )
 from openai.types.shared_params import FunctionDefinition
+from sequrity import SequrityClient
+from sequrity.control._config import ControlConfig
+from sequrity.control.types.headers import FeaturesHeader, FineGrainedConfigHeader, SecurityPolicyHeader
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random_exponential
-from openai.types.chat import ChatCompletion
 
 from agentdojo.agent_pipeline.base_pipeline_element import BasePipelineElement, defence_params
 from agentdojo.functions_runtime import EmptyEnv, Env, Function, FunctionCall, FunctionsRuntime
@@ -163,97 +163,65 @@ def chat_completion_request(
     params: dict = None,
 ):
 
-    headers={
-        "Content-Type": "application/json",
-        "Authorization" : f"Bearer {os.environ['X_Sequrity_Api_Key']}",
-        "X-Api-Key": os.environ["X_Api_Key"], 
+    p = params or {}
+    tool_policies = p.get("tool_policies", "")
+    max_retry_attempts = p.get("max_retry_attempts", 12)
+    clear_history_every_n_attempts = p.get("clear_history_every_n_attempts", 3)
+    retry_on_policy_violation = p.get("retry_on_policy_violation", True)
+    allow_undefined_tools = p.get("allow_undefined_tools", True)
+    fail_fast = p.get("fail_fast", True)
+    auto_gen_policies = p.get("auto_gen_policies", False)
+    dual_llm_mode = p.get("dual_llm_mode", True)
+    strict_mode = p.get("strict_mode", False)
+    min_num_tools_for_filtering = p.get("min_num_tools_for_filtering", 2)
+    enable_multistep_planning = p.get("enable_multistep_planning", False)
+    max_n_turns = p.get("max_n_turns", 20)
+    pllm_debug_info_level = p.get("pllm_debug_info_level", None)
 
-        "X-Security-Features":  json.dumps([
-          {"feature_name": 
-              "Dual LLM" if params['dual_llm_mode'] else "Single LLM", 
-              "config_json": json.dumps({"mode": 
-                  "strict" if params["strict_mode"] else "standard"})}, # or strict
-          {"feature_name": "Long Program Support", 
-              "config_json": json.dumps({"mode": "base"})},
-        ]),
+    features = FeaturesHeader.dual_llm() if dual_llm_mode else FeaturesHeader.single_llm()
 
-        'X-Security-Config': json.dumps({
-          "cache_tool_result": "all", # "none"
-          "force_to_cache": [], # you can tell what tool calls can be cached
-          "min_num_tools_for_filtering":    params["min_num_tools_for_filtering"],
-          "max_pllm_attempts":              params["max_retry_attempts"],
-          "max_n_turns":                    params["max_n_turns"],
-          #"n_plans":                        params["n_plans"],
-          #"plan_reduction":                 params["plan_reduction"],
-          "enable_multi_step_planning":     params["enable_multistep_planning"],
-          "clear_history_every_n_attempts": params["clear_history_every_n_attempts"],
-          "retry_on_policy_violation":      params["retry_on_policy_violation"],
-          "pllm_debug_info_level":          params["pllm_debug_info_level"],
-          "allow_runtime_policy_updates":   True,
-        }),
+    security_policy = SecurityPolicyHeader.dual_llm(
+        mode="strict" if strict_mode else "standard",
+        codes=tool_policies,
+        auto_gen=auto_gen_policies,
+        fail_fast=fail_fast,
+        default_allow=allow_undefined_tools,
+    )
 
-        'X-Security-Policy': json.dumps({
-          "language": "sqrt",
-          "fail_fast": params["fail_fast"],
-          "auto_gen":  params["auto_gen_policies"],
-          "codes":     params["tool_policies"],
+    fine_grained_config = FineGrainedConfigHeader.dual_llm(
+        min_num_tools_for_filtering=min_num_tools_for_filtering,
+        clear_history_every_n_attempts=clear_history_every_n_attempts,
+        retry_on_policy_violation=retry_on_policy_violation,
+        max_pllm_steps=max_retry_attempts,
+        enable_multistep_planning=enable_multistep_planning,
+        max_n_turns=max_n_turns,
+        pllm_debug_info_level=pllm_debug_info_level,
+    )
 
-          "internal_policy_preset": {
-              "default_allow": params["allow_undefined_tools"],
-              "enable_non_executable_memory": True,
-          }
-        }),
-    }
-
-    if session_id:
-        headers["X-Session-ID"] = session_id
+    sequrity_client = SequrityClient(
+        api_key=os.environ["X_Sequrity_Api_Key"],
+        control=ControlConfig(
+            llm_api_key=os.environ["X_Api_Key"],
+            features=features,
+            security_policy=security_policy,
+            fine_grained_config=fine_grained_config,
+        ),
+    )
 
     print("--- setting session id:", session_id)
 
-    values = {
-        "model": os.environ["X_Model_Type"],
-        "messages": messages,
-        "tools": tools,
-        "reasoning_effort": params["reasoning_effort"],
-        "temperature": temperature,
-    }
-
-    url = os.environ["ENDPOINT_ADDRESS"]
-    api_response = requests.post(
-        url,
-        json=values,
-        headers=headers,
-        timeout=3000,
+    response = sequrity_client.control.chat.create(
+        messages=list(messages),
+        model=os.environ["X_Model_Type"],
+        tools=list(tools) or None,
+        reasoning_effort=reasoning_effort,
+        temperature=1.0,
+        session_id=session_id,
     )
 
-    print("Got unparsed:", api_response, ":", api_response.text )
-    response = api_response.json()
-    session_id = api_response.headers.get('X-Session-Id', None)
+    print("Got response:", response)
 
-    if (response is not None) and ('usage' in response) and (response['usage'] is not None):
-        session_usage = response['usage']
-        response["usage"] = {
-            'prompt_tokens': session_usage['prompt_tokens'],
-            'completion_tokens': session_usage['completion_tokens'], 
-            'total_tokens': session_usage['total_tokens']
-        }
-    else:
-        response['usage'] = {
-            'prompt_tokens': -1,
-            'completion_tokens': -1,
-            'total_tokens': -1
-        }
-    return (ChatCompletion(**response), session_id)
-    # return reponse
-    # return client.chat.completions.create(
-    #     model=model,
-    #     messages=messages,
-    #     tools=tools or NOT_GIVEN,
-    #     tool_choice="auto" if tools else NOT_GIVEN,
-    #     temperature=temperature or NOT_GIVEN,
-    #     reasoning_effort=reasoning_effort or NOT_GIVEN,
-    # )
-
+    return (response, response.session_id)
 
 class OpenAILLM(BasePipelineElement):
     """LLM pipeline element that uses OpenAI's API.
@@ -277,6 +245,9 @@ class OpenAILLM(BasePipelineElement):
         self.reasoning_effort: ChatCompletionReasoningEffort | None = reasoning_effort
         self.session_id = None
 
+    def reset_session_id(self):
+        self.session_id = None
+
     def query(
         self,
         query: str,
@@ -298,7 +269,7 @@ class OpenAILLM(BasePipelineElement):
         output = _openai_to_assistant_message(completion.choices[0].message)
         messages = [*messages, output]
 
-        extra_args["usage"] = completion.usage.to_dict()
+        extra_args["usage"] = completion.usage.model_dump() if completion.usage is not None else {"prompt_tokens": -1, "completion_tokens": -1, "total_tokens": -1}
         return query, runtime, env, messages, extra_args
 
 
