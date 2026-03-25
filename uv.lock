@@ -3039,16 +3039,16 @@ wheels = [
 
 [[package]]
 name = "sequrity"
-version = "0.4.0.post1"
+version = "0.4.0.post2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "lark" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f7/ce/7741ca2ece4237be84bb8028cdea6014fc4df8c790a57467dce40cedeca2/sequrity-0.4.0.post1.tar.gz", hash = "sha256:8e95a376f7a50d87e7f0d330069c7aa9dc6c9cc512c1ab7df8b3bc60a3b6d017", size = 1578690, upload-time = "2026-02-19T13:15:28.056Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a9/d3/01b985f56cdcc693c2dfacdd0ded3611b11d64c08d507dcab03ca235ebbe/sequrity-0.4.0.post2.tar.gz", hash = "sha256:c18071ad5b5d6936613d4867b1c3e557bc5a3159bd48eaa70ed06ced1e64d3d1", size = 1580886, upload-time = "2026-02-19T21:34:40.965Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cf/53/b33f1efc9a8fa779931b2874d33d59933cb4e647771b121a538a9c933209/sequrity-0.4.0.post1-py3-none-any.whl", hash = "sha256:501c225b281adb7be7fb67373f22bd790de1e59291e627a938cb7b6a97d9990a", size = 62351, upload-time = "2026-02-19T13:15:25.969Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/67/3b9ba3d1e802ce81b7db3edf01a17f4b16fd495a91633a33ec68a6b626f6/sequrity-0.4.0.post2-py3-none-any.whl", hash = "sha256:4e4b087780cc64f70c9f2851855f5892cc23b477383f9ef5c7cf2d47b0b02edb", size = 63891, upload-time = "2026-02-19T21:34:39.342Z" },
 ]
 
 [[package]]

@@ -172,9 +172,10 @@ def chat_completion_request(
     fail_fast = p.get("fail_fast", True)
     auto_gen_policies = p.get("auto_gen_policies", False)
     dual_llm_mode = p.get("dual_llm_mode", True)
-    strict_mode = p.get("strict_mode", False)
+    strict_mode = p.get("strict_mode", True)
+    disable_rllm = p.get("disable_rllm", True)
     min_num_tools_for_filtering = p.get("min_num_tools_for_filtering", 2)
-    enable_multistep_planning = p.get("enable_multistep_planning", False)
+    enable_multistep_planning = True #p.get("enable_multistep_planning", False)
     max_n_turns = p.get("max_n_turns", 20)
     pllm_debug_info_level = p.get("pllm_debug_info_level", None)
 
@@ -196,6 +197,7 @@ def chat_completion_request(
         enable_multistep_planning=enable_multistep_planning,
         max_n_turns=max_n_turns,
         pllm_debug_info_level=pllm_debug_info_level,
+        disable_rllm=disable_rllm,
     )
 
     sequrity_client = SequrityClient(
